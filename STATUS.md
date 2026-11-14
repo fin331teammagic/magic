@@ -111,6 +111,21 @@ horizon is still missing and is retained as missing. The event manifest is
 empty, so the pilot is not the S&P 500 Q2 cohort and no transcript scores are
 included.
 
+## Checkpoint quantitative data (Gus, November 14, 2026)
+
+The event list, checkpoint outcome, and Yahoo features are built by
+`code/gus_collect.py`; definitions, sources, and limitations are in
+`docs/GUS_DATA_DICTIONARY.md`. Fiscal period ends come from SEC 10-Q/10-K
+report dates and release timestamps from 8-K Item 2.02 acceptance times,
+cross-checked against Yahoo's earnings dates. CAR[0,1] uses easy_es 0.1.8
+(the Lecture 13 package) with official Fama/French 5 daily factors (CRSP
+202609 vintage, through September 30, 2026). It is the checkpoint outcome
+only, separate from the 20-session ETF-proxy final outcome. Forward P/E and
+short interest are excluded because Yahoo provides only current snapshots;
+year-over-year growth is mostly missing because Yahoo's quarterly history does
+not reach the year-ago quarter. Yahoo's EPS consensus is not a preserved
+point-in-time record.
+
 ## Next actions
 
 1. Ask the course lead/library to check FactSet Academic access and transcript
