@@ -83,6 +83,11 @@ post-call information out of the scoring process.
 
 - Verify point-in-time S&P 500 membership and retain post-roster removals.
 - Independently verify event timestamps and EPS actual/consensus definitions.
+- The checkpoint event list uses SEC filing acceptance or a Yahoo-only
+  fallback as a timing proxy. Agreement between SEC and Yahoo day 0 does not
+  verify the conference-call day; the fallback events are not documented
+  manual checks. EA's missing automated match is not proof of no call.
+  Yahoo consensus EPS is not point-in-time verified.
 - Account for announcement timing, confounding same-day news, overlapping
   return windows, and incomplete forward outcomes.
 - If rights and broader transcript coverage are established, compare

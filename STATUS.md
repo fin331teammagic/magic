@@ -128,7 +128,10 @@ point-in-time record, so EPS surprise carries the status
 `observed_consensus_not_pit`. The primary analysis uses
 `primary_timing_sample == True` (SEC and Yahoo day 0 agree); companies
 without an SEC Item 2.02 8-K are included from Yahoo timing but kept out of
-the primary sample.
+the primary sample. The four Yahoo-only events use an automated fallback, not
+a documented manual source check. SEC/Yahoo agreement does not confirm the
+call occurred on that trading session. EA has no matching event under the
+automated rule; whether its Q2 call occurred remains unverified.
 
 ## Next actions
 

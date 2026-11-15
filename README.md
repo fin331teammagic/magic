@@ -151,9 +151,12 @@ research use is confirmed by the published terms.
 - `audits/01_self_audit.md` — current pilot limitations and validation needs.
 - `tests/test_pead_pipeline.py` — pipeline unit tests.
 - `code/gus_collect.py`, `code/gus_event_data.py` — checkpoint event list
-  (EDGAR fiscal period ends and 8-K timestamps), easy_es CAR[0,1], and
-  point-in-time Yahoo features; definitions in
+  (EDGAR fiscal period ends and SEC/Yahoo timestamp proxies), easy_es
+  CAR[0,1], and Yahoo features; definitions and limitations in
   [`docs/GUS_DATA_DICTIONARY.md`](docs/GUS_DATA_DICTIONARY.md).
+  SEC and Yahoo day-0 agreement does not verify conference-call timing;
+  EA's missing event match remains unresolved. Yahoo consensus EPS is not
+  point-in-time verified.
 - `tests/test_gus_event_data.py` — offline tests for IDs, joins, day-0
   timing, point-in-time rules, CAR[0,1], and missing values.
 

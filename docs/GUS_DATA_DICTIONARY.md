@@ -8,7 +8,7 @@ logic in `code/gus_event_data.py` (`tests/test_gus_event_data.py`).
 
 | File | One row per | Purpose |
 |---|---|---|
-| `inputs/q2_2026_events.csv` | company-quarter event | Verified event list: identity, fiscal period end, release timestamp, day 0, EPS, sources |
+| `inputs/q2_2026_events.csv` | company-quarter event | Source-derived event list: identity, fiscal period end, timestamp proxy, day 0, EPS, sources |
 | `outputs/q2_2026_exclusions.csv` | roster stock without an event | Reason each roster stock is not in the event list |
 | `outputs/q2_2026_event_study.csv` | event | Checkpoint outcome `car_0_1_pct` from easy_es |
 | `outputs/q2_2026_financial_features.csv` | event | Cammy's Run 1 variables, each with a `<name>_status` column |
@@ -37,14 +37,18 @@ logic in `code/gus_event_data.py` (`tests/test_gus_event_data.py`).
 4. **Release timestamp:** acceptance time of the first 8-K with Item 2.02
    (Results of Operations) filed after the period end and no later than 7 days
    after the 10-Q/10-K. Stored in New York time with its UTC offset. This is the
-   SEC filing time; the press release can precede it by minutes. The market
-   reacts to the release; the call usually follows on the same day (or the
-   next morning for after-close releases), so it maps to the same day 0.
-   **Fallback:** if a company has no Item 2.02 8-K (e.g. it furnished results
-   under another item), the first Yahoo earnings event after the period end
-   (and within 7 days of the 10-Q/10-K) is used instead, with
+   SEC filing time, not necessarily the actual press-release or conference-call
+   time. Treat mapping the call and release to the same day 0 as an
+   unverified assumption; agreement with Yahoo does not verify the call time.
+   **Fallback:** when the automated search finds no Item 2.02 8-K, it uses
+   the first Yahoo earnings event after the period end and within 7 days of
+   the 10-Q/10-K, with
    `timing_check = yahoo_only_no_sec_8k` and `primary_timing_sample = False`.
-   Companies with neither are excluded as `no_item_202_8k_or_yahoo_event`.
+   This is an automated, single-source fallback, not a documented manual
+   verification. Companies with neither match are excluded as
+   `no_item_202_8k_or_yahoo_event`; this does not establish that no call
+   occurred. EA remains excluded for this reason, pending an independent
+   event-source check.
 5. **Day 0** follows the repository rule in `code/pead_pipeline.py`: at or
    after 16:00 New York time maps to the next trading session; earlier times
    map to the first session on or after that date (weekends/holidays roll
@@ -90,10 +94,11 @@ Status values: `observed` (verified value), `observed_consensus_not_pit`
 A historical point-in-time consensus would need another source such as
 I/B/E/S via WRDS; the checkpoint uses Yahoo only, per the course restriction.
 
-All values use information dated strictly before day 0. Fundamentals come
-from the **prior fiscal quarter**, whose 10-Q/10-K filing date (from EDGAR) must
-precede day 0; the event quarter's own figures are released at the call and
-are never used.
+Price and prior-quarter fundamental features use information dated strictly
+before day 0. Fundamentals come from the **prior fiscal quarter**, whose
+10-Q/10-K filing date (from EDGAR) must precede day 0. EPS surprise is an
+exception: it uses the event-quarter actual released around the announcement,
+and Yahoo's consensus is not point-in-time verified.
 
 | Variable | Unit | Measurement | Point-in-time status |
 |---|---|---|---|
