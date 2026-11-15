@@ -1,6 +1,12 @@
 # secrets
 .env
 .streamlit/secrets.toml
+/restricted_data/
+/inputs/authorized_transcripts/
+/inputs/protected_transcripts/
+/inputs/real_transcripts/
+*.licensed-transcript.txt
+*.licensed-transcript.html
 
 # Python and notebooks
 __pycache__/
@@ -13,4 +19,6 @@ venv/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Raw source downloads (Yahoo, SEC, French) cached by code/gus_collect.py
 data/raw/
