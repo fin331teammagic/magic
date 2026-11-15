@@ -16,6 +16,7 @@ This is distinct from the project's final outcome, the cumulative abnormal retur
 - **Universe:** S&P 500 constituents as of June 30, 2026, from a dated roster file saved in the repo.
 - **Period:** companies with fiscal quarters ending April 1 through June 30, 2026.
 - **Same sample in every run:** all three runs use exactly the same events. Events missing any variable are dropped, and we report how many. A missing score is recorded as null, not zero, because zero would be read as a neutral score.
+- - **Main and robustness samples:** the main run uses events flagged `primary_timing_sample = True`. As a robustness check, we repeat the analysis on all events.
 - **Inputs:** (1) the event study dataset, built from tickers and call dates, which supplies CAR[0,1]; (2) Yahoo Finance variables measured as of the call date; (3) a transcript dataset with one row per call. The three are merged on a shared event ID (event ID, ticker, and fiscal period end).
 
 ## Approach: three runs, each adding information
@@ -75,6 +76,8 @@ We fix the variables, models, and the 60/40 split before viewing any results, an
 
 ## Data caveats
 
-- **Synthetic text in v0.** The transcript variables are currently computed on sample and synthetic transcripts to test the pipeline. They are not evidence for the research question. Real transcripts will replace them once access and usage rights are confirmed.
+- **Synthetic text in v0.** The transcript variables are currently computed on sample and synthetic transcripts to test the pipeline. They are not real-call observations and are not evidence for the research question. Real transcripts will replace them once access and usage rights are confirmed.
 - **Look-ahead bias.** Yahoo Finance reports some fields only as current values. Variables must be rebuilt as of the day before each call, and any that cannot be are dropped or flagged.
 - **LLM leakage.** For the AI-extracted variables, the scoring process must not use what the model may already know about how the stock reacted. The prompt and model version are recorded with every score.
+- **Call timing and exclusions under verification.** The timing of each call and the earnings-announcement (EA) exclusion are still being verified, which is why the main run uses the `primary_timing_sample` flag.
+- **Consensus EPS may not be point-in-time.** The EPS surprise uses a consensus estimate that is not yet confirmed to be the figure available before the call. Until it is, the surprise variable may carry look-ahead bias.
