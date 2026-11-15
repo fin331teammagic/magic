@@ -157,8 +157,8 @@ research use is confirmed by the published terms.
 
 ## Homework 8 dashboard fixture and shared row contract
 
-For the checkpoint, the dashboard merges three separate 20-row handoff
-fixtures. They use fictional `SYN` identifiers and are generated locally by
+For the checkpoint, three separate 20-row handoff fixtures can be merged by
+the pipeline. They use fictional `SYN` identifiers and are generated locally by
 `code/build_synthetic_checkpoint.py`; none contains real issuer, Yahoo, or
 event-study package observations. The transcript handoff uses the existing
 Claude scores on fictional mini-calls only. Classic sentiment values and
@@ -179,14 +179,15 @@ speaker-labeled excerpts and writes
 `outputs/synthetic_transcript_text_features.csv`, keyed by the same `event_id`.
 This output is separate from the dashboard fixture: the latter's classic
 sentiment columns remain synthetic placeholders until the team agrees to
-replace them with extracted features. The local pipeline makes no external
-AI/API calls.
+replace them with extracted features. A separate registry-compatible export,
+`outputs/transcript_features.csv`, contains the extracted synthetic dictionary
+features. The local pipeline makes no external AI/API calls.
 
 | Group | Shared columns and meaning |
 |---|---|
 | Event | `event_id`, `ticker`, `fiscal_period_end`, timezone-aware `earnings_timestamp`; one call per row |
 | Yahoo-finance X | `eps_actual`, `eps_estimate`, `eps_surprise_pct` = `(actual - estimate) / abs(estimate) * 100`, `eps_beat`, `market_cap_usd`, `sector`, and pre-call return/volatility fields |
-| Event-study Y | Normalized checkpoint fields `car_0_1_pct`, `car_0_5_pct`, `car_0_20_pct`; Gus should map the package output and confirm its event-day convention |
+| Event-study Y | Synthetic fixture fields `car_0_1_pct`, `car_0_5_pct`, `car_0_20_pct`; Gus's separate real checkpoint output provides `car_0_1_pct` |
 | Transcript X | Placeholder classic fields `transcript_sentiment`, `management_sentiment`, `analyst_question_sentiment`, `congratulations_mentioned`; Claude-scored synthetic-call fields `language_outlook_tone`, `language_guidance_specificity`, and `transcript_score_status` |
 | Provenance | Per-source source/retrieval fields; synthetic input is labeled, retrieval dates are blank, and Claude model, effort, prompt, and run date are recorded |
 
@@ -218,9 +219,12 @@ The generated files are:
 
 Regenerate all four with `python code/build_synthetic_checkpoint.py`. For
 other compatible handoffs, the shared merger is
-`code/merge_event_datasets.py`. Choose the synthetic checkpoint in the
-dashboard's Dataset menu to inspect overview, coverage, quality checks, and
-limitations; the existing Yahoo pilot remains available in that menu.
+`code/merge_event_datasets.py`. The registry-based dashboard defaults to the
+four-company pilot when its final cohort output is absent and offers an
+optional synthetic fixture preview. It reads the separately exported
+synthetic dictionary features, but does not automatically load Gus's
+checkpoint financial and event-study files as a cohort output. The synthetic
+IDs do not match real events; no real transcript-feature merge is available.
 
 ## Repository guide
 
@@ -274,6 +278,15 @@ limitations; the existing Yahoo pilot remains available in that menu.
   dashboard quality checks.
 - `audits/01_self_audit.md` — current pilot limitations and validation needs.
 - `tests/test_pead_pipeline.py` — pipeline unit tests.
+- `code/gus_collect.py`, `code/gus_event_data.py` — checkpoint event list
+  (EDGAR fiscal period ends and SEC/Yahoo timestamp proxies), easy_es
+  CAR[0,1], and Yahoo features; definitions and limitations in
+  [`docs/GUS_DATA_DICTIONARY.md`](docs/GUS_DATA_DICTIONARY.md).
+  SEC and Yahoo day-0 agreement does not verify conference-call timing;
+  EA's missing event match remains unresolved. Yahoo consensus EPS is not
+  point-in-time verified.
+- `tests/test_gus_event_data.py` — offline tests for IDs, joins, day-0
+  timing, point-in-time rules, CAR[0,1], and missing values.
 
 ## Run the pilot
 

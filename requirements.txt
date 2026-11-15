@@ -3,3 +3,4 @@ numpy
 yfinance
 lxml
 streamlit
+easy_es==0.1.8

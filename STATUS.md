@@ -143,14 +143,15 @@ predictive accuracy. See
 
 ## Homework 8 dashboard checkpoint
 
-The dashboard defaults to a 20-row, three-source synthetic checkpoint and
-can switch to the existing four-row Yahoo pilot. The synthetic handoffs are
+The dashboard defaults to the existing four-row Yahoo pilot when its cohort
+output is absent and offers an optional synthetic fixture preview. Separate
+20-row synthetic handoffs are
 `synthetic_yahoo_finance_variables.csv`,
 `synthetic_event_study_results.csv`, and
 `synthetic_transcript_features.csv`; they outer-merge on `event_id`, verify
-`ticker` and `fiscal_period_end`, and preserve component presence flags. The
-dashboard shows `CAR[0,1]` and secondary synthetic CAR windows, alongside the
-pilot's separately named ETF-proxy/SPY outcomes.
+`ticker` and `fiscal_period_end`, and preserve component presence flags in
+the pipeline's merged synthetic output. The dashboard does not automatically
+load Gus's checkpoint event-study and financial outputs as a cohort.
 
 Financial values, CARs, and classic sentiment fields are generated
 placeholders, not actual Yahoo Finance data, Event Study Package results, or
@@ -171,9 +172,10 @@ record, including sentiment, word counts/proportions, management/analyst
 sections, and explicit completeness flags. All 20 synthetic fixture excerpts
 are scored; separate tests cover incomplete and missing inputs. The
 dictionary file is not committed; the extractor
-records its version, source, retrieval date, and checksum. This output is not
-yet merged into the dashboard handoff, and it is not evidence about real
-transcripts or return prediction.
+records its version, source, retrieval date, and checksum. The separate
+registry-compatible `outputs/transcript_features.csv` exports these synthetic
+dictionary features. It is not evidence about real transcripts or return
+prediction and its fictional IDs cannot match real events.
 
 The suggested checkpoint comparison is Yahoo-only, then Yahoo plus classic
 sentiment, then additional transcript/AI features. The exact Yahoo fields
@@ -181,8 +183,9 @@ should be checked against Gus's myGPT list; Kami should confirm model inputs
 and whether the project uses regression, predictive ML, or both. Do not use
 a return overlapping `CAR[0,1]` as a predictor. The standardized checkpoint
 schema does not replace the longer-horizon final design in `PROPOSAL.md`.
-Regenerate all fixtures with `python code/build_synthetic_checkpoint.py`.
-No 500-company sample or real transcript-feature merge has been built.
+Regenerate the merged synthetic fixtures with
+`python code/build_synthetic_checkpoint.py`. No real transcript-feature merge
+has been built.
 
 ## Existing implementation
 
@@ -194,9 +197,35 @@ and starts forward windows after that session. A tested OLS helper now
 compares baseline and language-augmented models on the same chronological
 60/40 split; it has not been run on real cohort data. The refreshed CSV
 contains four complete 20-session pilot rows; one 60-session ETF-proxy
-horizon is still missing and is retained as missing. The event manifest is
-empty, so the pilot is not the S&P 500 Q2 cohort and no transcript scores are
-included.
+horizon is still missing and is retained as missing. The pilot is not the
+S&P 500 Q2 cohort and includes no transcript scores. Gus's checkpoint
+manifest is separate from the final cohort pipeline output.
+
+## Checkpoint quantitative data (Gus, November 14, 2026)
+
+The event list, checkpoint outcome, and Yahoo features are built by
+`code/gus_collect.py`; definitions, sources, and limitations are in
+`docs/GUS_DATA_DICTIONARY.md`. Fiscal period ends come from SEC 10-Q/10-K
+report dates and release timestamps from 8-K Item 2.02 acceptance times,
+cross-checked against Yahoo's earnings dates. CAR[0,1] uses easy_es 0.1.8
+(the Lecture 13 package) with official Fama/French 5 daily factors (CRSP
+202609 vintage, through September 30, 2026). It is the checkpoint outcome
+only, separate from the 20-session ETF-proxy final outcome. Forward P/E and
+short interest are excluded because Yahoo provides only current snapshots;
+year-over-year growth is mostly missing because Yahoo's quarterly history does
+not reach the year-ago quarter. Yahoo's EPS consensus is not a preserved
+point-in-time record, so EPS surprise carries the status
+`observed_consensus_not_pit`. The primary analysis uses
+`primary_timing_sample == True` (SEC and Yahoo day 0 agree); companies
+without an SEC Item 2.02 8-K are included from Yahoo timing but kept out of
+the primary sample. The four Yahoo-only events use an automated fallback, not
+a documented manual source check. SEC/Yahoo agreement does not confirm the
+call occurred on that trading session. EA has no matching event under the
+automated rule; whether its Q2 call occurred remains unverified.
+The checkpoint inputs contain 499 events; all 499 event-study and financial
+rows match the manifest one-to-one. The 20 fictional transcript events have
+zero matches to those real events, as expected. The final cohort dashboard
+output has not been built from these checkpoint files.
 
 ## Next actions
 

@@ -1,0 +1,5 @@
+ticker,reason,detail
+GOOG,secondary_share_class,same call as GOOGL
+EA,no_item_202_8k_or_yahoo_event,no SEC 8-K Item 2.02 and no Yahoo earnings event after the period end
+FOX,secondary_share_class,same call as FOXA
+NWS,secondary_share_class,same call as NWSA
