@@ -50,6 +50,7 @@ ES_SETTINGS = dict(estimation_days=255, gap_days=50, window_before=10, window_af
 YAHOO_SOURCE = "Yahoo Finance via yfinance {}"
 EPS_SOURCE = "Yahoo Finance get_earnings_dates (Reported EPS, EPS Estimate); consensus not point-in-time verified"
 TIMESTAMP_BASIS = "SEC 8-K Item 2.02 acceptance time (filing time; press release may precede it by minutes)"
+YAHOO_TIMESTAMP_BASIS = "Yahoo Finance earnings timestamp (no SEC 8-K Item 2.02 found; single source, not in primary sample)"
 
 
 # --------------------------------------------------------------------------
@@ -169,21 +170,35 @@ def build_manifest(as_of, tickers=None):
             report = periodic.sort_values("filingDate").iloc[0]
             period_end = report["reportDate"]
 
-            release = g.find_earnings_release(filings, period_end, report["filingDate"])
-            if release is None:
-                exclusions.append((ticker, "no_item_202_8k", "no 8-K Item 2.02 between period end and periodic filing"))
-                continue
-            stamp = release["acceptanceDateTime"].tz_convert(g.EASTERN)
-            day0 = g.assign_day0_session(stamp, sessions)
-            prior = g.prior_quarter_filing(filings, period_end)
-
             symbol = g.yahoo_symbol(ticker)
             try:
                 yahoo = _cache("yahoo/earnings/{}.pkl".format(symbol), lambda: _retry(lambda: yf.Ticker(symbol).get_earnings_dates(limit=16)))
             except Exception as error:
                 yahoo = None
                 print("  {}: Yahoo earnings dates unavailable ({})".format(ticker, str(error)[:80]))
-            match = g.match_yahoo_event(yahoo, day0, sessions)
+
+            release = g.find_earnings_release(filings, period_end, report["filingDate"])
+            if release is not None:
+                stamp = release["acceptanceDateTime"].tz_convert(g.EASTERN)
+                day0 = g.assign_day0_session(stamp, sessions)
+                match = g.match_yahoo_event(yahoo, day0, sessions)
+                basis, stamp_source = TIMESTAMP_BASIS, filing_url(company.CIK, release["accessionNumber"])
+            else:
+                fallback = g.yahoo_release_after_period(yahoo, period_end, report["filingDate"] + pd.Timedelta(days=7))
+                if fallback is None:
+                    exclusions.append((ticker, "no_item_202_8k_or_yahoo_event", "no SEC 8-K Item 2.02 and no Yahoo earnings event after the period end"))
+                    continue
+                stamp = pd.Timestamp(fallback[0]).tz_convert(g.EASTERN)
+                day0 = g.assign_day0_session(stamp, sessions)
+                match = {
+                    "yahoo_timestamp": stamp,
+                    "yahoo_day0_session": day0,
+                    "eps_actual": pd.to_numeric(fallback[1].get("Reported EPS"), errors="coerce"),
+                    "eps_estimate": pd.to_numeric(fallback[1].get("EPS Estimate"), errors="coerce"),
+                    "timing_check": g.YAHOO_ONLY_TIMING,
+                }
+                basis, stamp_source = YAHOO_TIMESTAMP_BASIS, "Yahoo Finance get_earnings_dates"
+            prior = g.prior_quarter_filing(filings, period_end)
             surprise_usd, surprise_pct = g.eps_surprise(match["eps_actual"], match["eps_estimate"])
 
             rows.append(
@@ -200,8 +215,8 @@ def build_manifest(as_of, tickers=None):
                     "periodic_filing_date": _date(report["filingDate"]),
                     "earnings_timestamp": _iso(stamp),
                     "release_timing": g.release_timing(stamp),
-                    "timestamp_basis": TIMESTAMP_BASIS,
-                    "event_timestamp_source": filing_url(company.CIK, release["accessionNumber"]),
+                    "timestamp_basis": basis,
+                    "event_timestamp_source": stamp_source,
                     "day0_session": _date(day0),
                     "yahoo_earnings_timestamp": _iso(match["yahoo_timestamp"]),
                     "yahoo_day0_session": _date(match["yahoo_day0_session"]),
@@ -345,9 +360,9 @@ def build_features(as_of):
         rows = []
         day0 = pd.Timestamp(event.day0_session) if isinstance(event.day0_session, str) and event.day0_session else pd.NaT
         usd, pct = event.eps_surprise_usd, event.eps_surprise_pct
-        eps_status = g.STATUS_OBSERVED if pd.notna(usd) else g.STATUS_UNAVAILABLE
-        rows.append(g._value("eps_surprise_usd", usd, eps_status, "Reported EPS - EPS Estimate", note="consensus not point-in-time verified"))
-        rows.append(g._value("eps_surprise_pct", pct, g.STATUS_OBSERVED if pd.notna(pct) else g.STATUS_UNAVAILABLE, "Reported EPS, EPS Estimate"))
+        unverified = g.STATUS_OBSERVED_CONSENSUS_NOT_PIT
+        rows.append(g._value("eps_surprise_usd", usd, unverified if pd.notna(usd) else g.STATUS_UNAVAILABLE, "Reported EPS - EPS Estimate", note="Yahoo consensus not point-in-time verified"))
+        rows.append(g._value("eps_surprise_pct", pct, unverified if pd.notna(pct) else g.STATUS_UNAVAILABLE, "Reported EPS, EPS Estimate", note="Yahoo consensus not point-in-time verified"))
         rows.extend(g.current_only_rows())
 
         if pd.isna(day0):
@@ -400,9 +415,13 @@ def build_features(as_of):
     provenance = pd.DataFrame(records)
     provenance["known_by_date"] = provenance["known_by_date"].map(_date)
     provenance["source_period_end"] = provenance["source_period_end"].map(_date)
-    bad = provenance[(provenance["value_status"] == g.STATUS_OBSERVED) & provenance["value"].isna()]
+    present = provenance["value_status"].isin(g.VALUE_PRESENT_STATUSES)
+    bad = provenance[(present & provenance["value"].isna()) | (~present & provenance["value"].notna())]
     if len(bad):
-        raise ValueError("Observed status with blank value: {}".format(bad[["event_id", "variable"]].head()))
+        raise ValueError("Status and value disagree: {}".format(bad[["event_id", "variable"]].head()))
+    eps_rows = provenance["variable"].isin(["eps_surprise_usd", "eps_surprise_pct"])
+    if (eps_rows & provenance["value_status"].eq(g.STATUS_OBSERVED)).any():
+        raise ValueError("EPS surprise must not be marked as verified 'observed'.")
     check = provenance.merge(manifest[["event_id", "day0_session"]], on="event_id")
     late = check[(check["known_by_date"] != "") & (check["known_by_date"] >= check["day0_session"])]
     if len(late):

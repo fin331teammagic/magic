@@ -34,7 +34,12 @@ STATUS_OBSERVED = "observed"
 STATUS_UNAVAILABLE = "missing_unavailable"
 STATUS_NOT_PIT = "missing_not_point_in_time"
 STATUS_CURRENT_ONLY = "excluded_current_only"
-VALUE_STATUSES = (STATUS_OBSERVED, STATUS_UNAVAILABLE, STATUS_NOT_PIT, STATUS_CURRENT_ONLY)
+# A value is present but rests on Yahoo's consensus EPS, which is not a
+# preserved point-in-time record. Treat as unverified, not as confirmed.
+STATUS_OBSERVED_CONSENSUS_NOT_PIT = "observed_consensus_not_pit"
+VALUE_STATUSES = (STATUS_OBSERVED, STATUS_OBSERVED_CONSENSUS_NOT_PIT, STATUS_UNAVAILABLE, STATUS_NOT_PIT, STATUS_CURRENT_ONLY)
+VALUE_PRESENT_STATUSES = (STATUS_OBSERVED, STATUS_OBSERVED_CONSENSUS_NOT_PIT)
+YAHOO_ONLY_TIMING = "yahoo_only_no_sec_8k"
 
 # Cammy's Run 1 variables (ANALYSIS_PLAN.md) and how each is measured.
 FEATURE_SPEC = {
@@ -207,6 +212,24 @@ def match_yahoo_event(yahoo_events, edgar_day0, sessions, max_days=5):
     }
 
 
+def yahoo_release_after_period(yahoo_events, fiscal_period_end, latest_date):
+    """Fallback when no SEC 8-K Item 2.02 exists: the first Yahoo earnings
+    event dated after the period end and no later than `latest_date`
+    (New York dates). Returns (timestamp, row) or None. Single-source timing.
+    """
+    if yahoo_events is None or len(yahoo_events) == 0:
+        return None
+    index = pd.DatetimeIndex(yahoo_events.index)
+    if index.tz is None:
+        raise ValueError("Yahoo earnings dates must be timezone-aware.")
+    dates = index.tz_convert(EASTERN).normalize().tz_localize(None)
+    mask = (dates > pd.Timestamp(fiscal_period_end)) & (dates <= pd.Timestamp(latest_date))
+    if not mask.any():
+        return None
+    position = int(np.flatnonzero(mask)[np.argmin(dates[mask])])
+    return index[position], yahoo_events.iloc[position]
+
+
 def eps_surprise(actual, estimate):
     """Return (surprise in USD, surprise in percent); NaN when undefined."""
     if pd.isna(actual) or pd.isna(estimate):
@@ -304,8 +327,8 @@ def easy_es_estimation_nobs(return_dates, factor_dates, day0, estimation_days=25
 # --------------------------------------------------------------------------
 
 def _value(name, value, status, source_field, known_by=pd.NaT, source_period_end=pd.NaT, note=""):
-    if status != STATUS_OBSERVED or value is None or (isinstance(value, float) and not np.isfinite(value)):
-        if status == STATUS_OBSERVED:
+    if status not in VALUE_PRESENT_STATUSES or value is None or (isinstance(value, float) and not np.isfinite(value)):
+        if status in VALUE_PRESENT_STATUSES:
             status = STATUS_UNAVAILABLE
         value = np.nan
     return {

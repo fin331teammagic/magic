@@ -160,6 +160,24 @@ class YahooMatchTests(unittest.TestCase):
         self.assertEqual(result["timing_check"], "no_yahoo_event")
         self.assertTrue(np.isnan(result["eps_actual"]))
 
+    def test_yahoo_fallback_picks_first_event_after_period_end(self):
+        yahoo = pd.DataFrame(
+            {"EPS Estimate": [1.0, 3.63, 1.40], "Reported EPS": [2.0, 3.52, np.nan]},
+            index=pd.DatetimeIndex(["2026-05-01 06:00", "2026-07-31 06:00", "2026-10-30 06:00"]).tz_localize(ET),
+        )
+        stamp, row = g.yahoo_release_after_period(yahoo, "2026-06-30", "2026-08-11")
+        self.assertEqual(stamp, pd.Timestamp("2026-07-31 06:00", tz=ET))
+        self.assertAlmostEqual(row["Reported EPS"], 3.52)
+
+    def test_yahoo_fallback_none_when_no_event_in_window(self):
+        yahoo = pd.DataFrame(
+            {"EPS Estimate": [1.0], "Reported EPS": [2.0]},
+            index=pd.DatetimeIndex(["2026-05-01 06:00"]).tz_localize(ET),
+        )
+        self.assertIsNone(g.yahoo_release_after_period(yahoo, "2026-06-30", "2026-08-11"))
+        self.assertIsNone(g.yahoo_release_after_period(None, "2026-06-30", "2026-08-11"))
+        self.assertIsNone(g.yahoo_release_after_period(yahoo.iloc[:0], "2026-06-30", "2026-08-11"))
+
     def test_surprise_math_and_zero_estimate(self):
         usd, pct = g.eps_surprise(1.60, 1.50)
         self.assertAlmostEqual(usd, 0.10)
@@ -346,6 +364,15 @@ class StatementTests(unittest.TestCase):
         values = {r["variable"]: r["value"] for r in rows}
         self.assertTrue(np.isnan(values["price_to_book"]))
         self.assertTrue(np.isnan(values["debt_to_equity"]))
+
+    def test_unverified_consensus_status_keeps_value(self):
+        row = g._value("eps_surprise_usd", 0.1, g.STATUS_OBSERVED_CONSENSUS_NOT_PIT, "x")
+        self.assertEqual(row["value_status"], "observed_consensus_not_pit")
+        self.assertAlmostEqual(row["value"], 0.1)
+        self.assertNotEqual(row["value_status"], g.STATUS_OBSERVED)
+        blank = g._value("eps_surprise_usd", np.nan, g.STATUS_OBSERVED_CONSENSUS_NOT_PIT, "x")
+        self.assertEqual(blank["value_status"], g.STATUS_UNAVAILABLE)
+        self.assertIn(g.STATUS_OBSERVED_CONSENSUS_NOT_PIT, g.VALUE_STATUSES)
 
     def test_current_only_fields_are_always_blank(self):
         for row in g.current_only_rows():

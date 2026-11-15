@@ -37,15 +37,24 @@ logic in `code/gus_event_data.py` (`tests/test_gus_event_data.py`).
 4. **Release timestamp:** acceptance time of the first 8-K with Item 2.02
    (Results of Operations) filed after the period end and no later than 7 days
    after the 10-Q/10-K. Stored in New York time with its UTC offset. This is the
-   SEC filing time; the press release can precede it by minutes.
+   SEC filing time; the press release can precede it by minutes. The market
+   reacts to the release; the call usually follows on the same day (or the
+   next morning for after-close releases), so it maps to the same day 0.
+   **Fallback:** if a company has no Item 2.02 8-K (e.g. it furnished results
+   under another item), the first Yahoo earnings event after the period end
+   (and within 7 days of the 10-Q/10-K) is used instead, with
+   `timing_check = yahoo_only_no_sec_8k` and `primary_timing_sample = False`.
+   Companies with neither are excluded as `no_item_202_8k_or_yahoo_event`.
 5. **Day 0** follows the repository rule in `code/pead_pipeline.py`: at or
    after 16:00 New York time maps to the next trading session; earlier times
    map to the first session on or after that date (weekends/holidays roll
    forward). Sessions come from SPY's Yahoo trading calendar.
 6. **Second-source timing check:** Yahoo's earnings timestamp is mapped to a
    day 0 with the same rule. `timing_check` is `consistent`,
-   `yahoo_day0_differs`, or `no_yahoo_event`. `primary_timing_sample` is true
-   only when consistent; use it to filter the primary analysis.
+   `yahoo_day0_differs`, `no_yahoo_event`, or `yahoo_only_no_sec_8k`.
+   `primary_timing_sample` is true only when SEC and Yahoo agree.
+   **Use `primary_timing_sample == True` for the main analysis; use all events
+   only as a robustness check.**
 7. **EPS:** Yahoo `Reported EPS` and `EPS Estimate` for the matched Yahoo event.
    Yahoo's consensus is not a preserved point-in-time record; this is stated
    in `earnings_source`. Missing EPS stays blank.
@@ -75,6 +84,12 @@ logic in `code/gus_event_data.py` (`tests/test_gus_event_data.py`).
 
 ## `outputs/q2_2026_financial_features.csv` (Run 1 X)
 
+Status values: `observed` (verified value), `observed_consensus_not_pit`
+(value present but rests on Yahoo's unverified consensus; EPS surprise only),
+`missing_unavailable`, `missing_not_point_in_time`, `excluded_current_only`.
+A historical point-in-time consensus would need another source such as
+I/B/E/S via WRDS; the checkpoint uses Yahoo only, per the course restriction.
+
 All values use information dated strictly before day 0. Fundamentals come
 from the **prior fiscal quarter**, whose 10-Q/10-K filing date (from EDGAR) must
 precede day 0; the event quarter's own figures are released at the call and
@@ -82,7 +97,7 @@ are never used.
 
 | Variable | Unit | Measurement | Point-in-time status |
 |---|---|---|---|
-| `eps_surprise_usd` | USD/share | actual − consensus | Consensus not PIT-verified |
+| `eps_surprise_usd` | USD/share | actual − consensus | Status `observed_consensus_not_pit`: Yahoo consensus is not point-in-time verified; treat as unverified |
 | `eps_surprise_pct` | % | (actual − consensus) / \|consensus\| × 100; blank if consensus = 0 | Same |
 | `log_market_cap` | ln(USD) | unadjusted close on day −1 × latest Yahoo share count dated before day 0 | Rebuilt; blank if a split occurred after day −1 |
 | `price_to_book` | ratio | market cap / prior-quarter stockholders' equity | Rebuilt; blank if equity ≤ 0 |

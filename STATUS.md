@@ -124,7 +124,11 @@ only, separate from the 20-session ETF-proxy final outcome. Forward P/E and
 short interest are excluded because Yahoo provides only current snapshots;
 year-over-year growth is mostly missing because Yahoo's quarterly history does
 not reach the year-ago quarter. Yahoo's EPS consensus is not a preserved
-point-in-time record.
+point-in-time record, so EPS surprise carries the status
+`observed_consensus_not_pit`. The primary analysis uses
+`primary_timing_sample == True` (SEC and Yahoo day 0 agree); companies
+without an SEC Item 2.02 8-K are included from Yahoo timing but kept out of
+the primary sample.
 
 ## Next actions
 
