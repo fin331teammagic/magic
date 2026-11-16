@@ -43,23 +43,40 @@ that our course has access to transcripts or permission for AI use. Ask the
 course lead/library to verify that entitlement or request a written license
 from a transcript provider.
 
-A focused metadata screen on November 7, 2026 identified 15 S&P-roster
-candidate listings in `inputs/transcript_candidate_screen_q2_2026.csv`.
-These are not 15 verified or rights-cleared transcripts. Two first-party
-transcript PDFs have been verified: JPMorganChase's 2Q26 PDF and Meta's Q4CDN
-PDF linked/indexed with Meta IR materials. Both PDFs were opened in a browser,
-but their transcript text was not reviewed or retained; retention and
-external-model rights are unknown. Amazon's official event page confirms its
-July 30 call but lists a webcast, release, and slides—not a transcript. Its
-third-party transcript listings remain leads only.
-The Microsoft Investor Relations page for [FY26 Q4](https://www.microsoft.com/en-us/Investor/events/FY-2026/earnings-fy-2026-q4)
-confirms a July 29, 2026 call and displays transcript text; only the initial
-preview was viewed, and no transcript text was saved or analyzed. Microsoft's
-[website terms](https://www.microsoft.com/en-us/legal/terms-of-use) generally
-restrict copying and do not establish permission to retain this transcript or
-submit it to an external model. Intel search results identify a Seeking Alpha
-transcript listing, but no transcript source page was opened and no text was
-retained. The attached
+The metadata screen began on November 7 and was updated November 10, 2026.
+It now has 21 company candidates in
+`inputs/transcript_candidate_screen_q2_2026.csv`, including Wells Fargo,
+which was added as a lead. Twelve potential first-party transcript locations
+are event-aligned to the calendar-Q2 cohort: 11 PDF links (Alphabet,
+AT&T, Bank of America, Citigroup, Coca-Cola, Expedia, Hilton, JPMorganChase,
+Meta, Netflix, and Visa) plus Microsoft's transcript page. Hilton's
+quarterly-results page and Expedia's Q2 event page each list a transcript
+PDF; SEC 10-Q headers confirm both quarters ended June 30, 2026 (calls July
+28 and August 5). Both are posted transcripts, not verified complete ones:
+their contents were not opened, and Hilton's site-usage agreement and
+Expedia's website terms restrict copying and do not grant study-retention or
+external-model rights. HPE has a located issuer PDF,
+but its fiscal Q2 ended April 30, so it is outside the cohort. Apple and
+Intel fiscal quarters ended June 27 and their calls were July 30 and July 23,
+respectively; official result materials do not provide a verified full
+transcript. AT&T's fiscal period alignment is confirmed at June 30.
+
+The Citi PDF returned 403 to a metadata-only request; it was not retried or
+bypassed. Transcript text was not retained. The 11 PDF contents were not
+reviewed for completeness, and no transcript source has confirmed permission
+for project retention or external AI input. Microsoft's
+[FY26 Q4 page](https://www.microsoft.com/en-us/Investor/events/FY-2026/earnings-fy-2026-q4)
+displays transcript text, but only the initial preview was viewed and no text
+was saved or analyzed; its [website terms](https://www.microsoft.com/en-us/legal/terms-of-use)
+do not establish project-retention or external-model permission. Official
+event pages for Amazon, Mastercard, Goldman Sachs, Morgan Stanley, and IBM
+list no transcript. Wells Fargo's official quarterly page lists earnings
+materials, while its transcript result is only a GuruFocus search lead whose
+destination and rights are unverified. Third-party leads for GS, MS, IBM,
+Apple, and Intel also remain unverified. No full transcript has been checked
+for completeness; the pilot remains empty.
+
+The attached
 [Quartr B2C terms PDF](https://a.storyblok.com/f/182663/x/49876bbd8f/terms-of-service-quartr-b2c-version-2025-11-27.pdf)
 is the November 27, 2025 version; as already noted, its terms do not establish
 permission to retain transcripts for this study or send them to an external
@@ -97,6 +114,94 @@ terms have now been reviewed; they do not establish retention or external-model
 use rights. The Microsoft terms have also been reviewed and do not establish
 those rights.
 
+For the November 13 checkpoint, use synthetic transcripts only with external
+AI. Professor Bowen's current instruction prohibits uploading licensed
+transcript text to GitHub or sending it to external AI services; do not use
+Claude, Expected Parrot, or another external service with real transcript
+text. The synthetic-only prompt and two-feature scoring rubric are in
+`TRANSCRIPT_CHECKPOINT.md`. No real transcript text has been processed here,
+and this checkpoint does not replace the proposed final model or support
+predictive claims. The synthetic example was run twice with Claude Haiku 5.5
+at Low effort and returned the expected scores. The web interface did not
+expose a maximum-token setting, and strict JSON parseability remains
+unverified for the single-transcript JSON prompt.
+
+Twenty expanded synthetic mini-calls were batch-scored with Claude Haiku 5.5
+at Low effort, using prompt version 1.2. All 20 matched the reference labels
+after the rubric was clarified and two labels were corrected; because the same
+examples were used for prompt tuning, this is not an independent accuracy
+estimate. The mock calls test scoring and output format, not real-call token
+cost. See
+`inputs/synthetic_transcript_checkpoint_claude_scores.csv`.
+
+A separate 10-call synthetic validation set was scored once with the prompt
+frozen at version 1.2. Its reference labels were not sent to Claude and were
+not changed after scoring; all 10 model outputs matched. This is a synthetic
+consistency check only, not validation on real transcripts or evidence of
+predictive accuracy. See
+`inputs/synthetic_transcript_validation_claude_scores.csv`.
+
+## Homework 8 dashboard checkpoint
+
+The dashboard defaults to the existing four-row Yahoo pilot when its cohort
+output is absent and offers an optional synthetic fixture preview. Separate
+20-row synthetic handoffs are
+`synthetic_yahoo_finance_variables.csv`,
+`synthetic_event_study_results.csv`, and
+`synthetic_transcript_features.csv`; they outer-merge on `event_id`, verify
+`ticker` and `fiscal_period_end`, and preserve component presence flags in
+the pipeline's merged synthetic output. The dashboard does not automatically
+load Gus's checkpoint event-study and financial outputs as a cohort.
+
+Financial values, CARs, and classic sentiment fields are generated
+placeholders, not actual Yahoo Finance data, Event Study Package results, or
+scores calculated from text. The two rubric features in the transcript
+handoff reuse Claude Haiku 5.5 Low outputs on the 20 fictional development
+calls (prompt 1.2); metadata is recorded and no transcript text is included.
+Those same calls were used for prompt tuning, so 20/20 label agreement is not
+an independent accuracy estimate. A separate 10-call synthetic validation
+set matched 10/10 references once. Source fields identify synthetic inputs,
+retrieval fields remain blank, and deliberate missing values stay null. The
+dashboard displays overview, coverage, quality checks, and limitations; it
+does not estimate returns or fit models.
+
+A separate local-only transcript feature extractor now scores the 20
+fictional speaker-labeled mini-call excerpts with the Loughran–McDonald
+1993–2025 Master Dictionary. It outputs one event-keyed row per manifest
+record, including sentiment, word counts/proportions, management/analyst
+sections, and explicit completeness flags. All 20 synthetic fixture excerpts
+are scored; separate tests cover incomplete and missing inputs. The
+dictionary file is not committed; the extractor
+records its version, source, retrieval date, and checksum. The separate
+registry-compatible `outputs/transcript_features.csv` exports these synthetic
+dictionary features. It is not evidence about real transcripts or return
+prediction and its fictional IDs cannot match real events.
+
+The suggested checkpoint comparison is Yahoo-only, then Yahoo plus classic
+sentiment, then additional transcript/AI features. The exact Yahoo fields
+should be checked against Gus's myGPT list; Kami should confirm model inputs
+and whether the project uses regression, predictive ML, or both. Do not use
+a return overlapping `CAR[0,1]` as a predictor. The standardized checkpoint
+schema does not replace the longer-horizon final design in `PROPOSAL.md`.
+Regenerate the merged synthetic fixtures with
+`python code/build_synthetic_checkpoint.py`. No real transcript-feature merge
+has been built.
+
+### Synthetic final-shape dataset and Results tab (Nov 14, 2026)
+
+`code/build_synthetic_final_dataset.py` generates 500 invented calls
+(`SYN001`-`SYN500`) with every variable in `ANALYSIS_PLAN.md`, writes the
+variable dictionary, and runs the plan's three nested OLS models on
+`CAR[0,1]` (same complete-case sample, chronological ~60/40 split on a date
+boundary). The dashboard's **Results (checkpoint)** tab displays those outputs
+under a synthetic banner. Relationships are planted by the generator, so the
+results show the analysis layout only. `car_final_20s_pct` (the final-study
+outcome) is in the file but not used by the checkpoint models.
+`sentiment_gap` stays in the dataset but is excluded from the regressions,
+because it equals management minus analyst sentiment exactly (perfect
+collinearity). The real merged file should replace
+`outputs/synthetic_final_dataset.csv` with the same columns.
+
 ## Existing implementation
 
 The four-firm AAPL/MSFT/TSLA/NVDA Yahoo Finance pilot, CSV, dashboard, audit,
@@ -107,9 +212,35 @@ and starts forward windows after that session. A tested OLS helper now
 compares baseline and language-augmented models on the same chronological
 60/40 split; it has not been run on real cohort data. The refreshed CSV
 contains four complete 20-session pilot rows; one 60-session ETF-proxy
-horizon is still missing and is retained as missing. The event manifest is
-empty, so the pilot is not the S&P 500 Q2 cohort and no transcript scores are
-included.
+horizon is still missing and is retained as missing. The pilot is not the
+S&P 500 Q2 cohort and includes no transcript scores. Gus's checkpoint
+manifest is separate from the final cohort pipeline output.
+
+## Checkpoint quantitative data (Gus, November 14, 2026)
+
+The event list, checkpoint outcome, and Yahoo features are built by
+`code/gus_collect.py`; definitions, sources, and limitations are in
+`docs/GUS_DATA_DICTIONARY.md`. Fiscal period ends come from SEC 10-Q/10-K
+report dates and release timestamps from 8-K Item 2.02 acceptance times,
+cross-checked against Yahoo's earnings dates. CAR[0,1] uses easy_es 0.1.8
+(the Lecture 13 package) with official Fama/French 5 daily factors (CRSP
+202609 vintage, through September 30, 2026). It is the checkpoint outcome
+only, separate from the 20-session ETF-proxy final outcome. Forward P/E and
+short interest are excluded because Yahoo provides only current snapshots;
+year-over-year growth is mostly missing because Yahoo's quarterly history does
+not reach the year-ago quarter. Yahoo's EPS consensus is not a preserved
+point-in-time record, so EPS surprise carries the status
+`observed_consensus_not_pit`. The primary analysis uses
+`primary_timing_sample == True` (SEC and Yahoo day 0 agree); companies
+without an SEC Item 2.02 8-K are included from Yahoo timing but kept out of
+the primary sample. The four Yahoo-only events use an automated fallback, not
+a documented manual source check. SEC/Yahoo agreement does not confirm the
+call occurred on that trading session. EA has no matching event under the
+automated rule; whether its Q2 call occurred remains unverified.
+The checkpoint inputs contain 499 events; all 499 event-study and financial
+rows match the manifest one-to-one. The 20 fictional transcript events have
+zero matches to those real events, as expected. The final cohort dashboard
+output has not been built from these checkpoint files.
 
 ## Next actions
 
