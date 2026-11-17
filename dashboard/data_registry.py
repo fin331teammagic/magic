@@ -93,11 +93,13 @@ DATASETS = {
                 "fiscal_period_end",
                 "earnings_timestamp",
                 "eps_surprise_pct",
-                "factor_proxy_announcement_abnormal_return_pct",
-                "factor_proxy_abnormal_20d_return_pct",
+                "car_0_1_pct",
+                "primary_timing_sample",
+                "data_status",
             ),
             default_status=COHORT,
-            description="Pipeline output built from the verified event manifest.",
+            description="Gus's event list, easy_es CAR[0,1] and Run 1 Yahoo variables joined on "
+            "event_id by code/build_cohort_dataset.py. The 20-session outcome is not computed yet.",
         ),
         DatasetSpec(
             key="exclusions",

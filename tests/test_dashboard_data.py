@@ -271,7 +271,8 @@ class StatusRuleTests(unittest.TestCase):
         row = pd.Series({"ticker": "X", "eps_actual": float("nan"), "earnings_date": "2026-07-01",
                          "retrieved_at_utc": "2026-11-06"})
         self.assertEqual(st_rules.classify_event_value(row, "eps_actual", None, False), st_rules.MISSING)
-        self.assertEqual(st_rules.classify_event_value(row, "absent_column", None, False), st_rules.MISSING)
+        # A column nobody has computed yet is pending, not a missing value.
+        self.assertEqual(st_rules.classify_event_value(row, "absent_column", None, False), st_rules.PENDING)
 
     def test_synthetic_events_never_show_available(self):
         row = pd.Series({"ticker": "SYN01", "eps_actual": 1.0})
@@ -336,7 +337,9 @@ class AppSmokeTests(unittest.TestCase):
         app = self._run(False)
         self.assertTrue(any("SYNTHETIC TEST DATA" in e.value for e in app.error))
         self.assertTrue(any("synthetic inputs" in e.value for e in app.error))
-        self.assertTrue(any("PILOT DATA" in w.value for w in app.warning))
+        # The pilot banner shows only while the real cohort file is absent.
+        has_cohort = (ROOT / "outputs" / "q2_2026_cohort.csv").exists()
+        self.assertEqual(any("PILOT DATA" in w.value for w in app.warning), not has_cohort)
 
     def test_app_runs_with_fixtures_and_labels_them(self):
         app = self._run(True)

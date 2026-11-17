@@ -53,6 +53,8 @@ EVENT_FIELDS = [
     ("Announcement time", "earnings_timestamp", None),
     ("EPS actual", "eps_actual", None),
     ("EPS consensus", "eps_estimate", None),
+    ("EPS surprise", "eps_surprise_pct", None),
+    ("CAR[0,1] (checkpoint)", "car_0_1_pct", None),
     ("Announcement reaction", "factor_proxy_announcement_abnormal_return_pct", 0),
     ("5-session return", "factor_proxy_abnormal_5d_return_pct", 5),
     ("20-session return (primary)", "factor_proxy_abnormal_20d_return_pct", 20),
@@ -112,7 +114,7 @@ def forward_window_status(event_date, as_of_date, horizon: int) -> str:
 def classify_event_value(row, column: str, horizon: Optional[int], synthetic: bool,
                          as_of_fallback=None) -> str:
     if column not in row.index:
-        return MISSING
+        return PENDING  # not computed / delivered yet, which is different from a blank value
     if _is_blank(row[column]):
         if horizon:
             return forward_window_status(_event_date(row), _as_of_date(row, as_of_fallback), horizon)
@@ -174,7 +176,7 @@ def build_status_matrix(events: pd.DataFrame, events_synthetic: bool,
         for label, column, horizon in EVENT_FIELDS:
             status = classify_event_value(row, column, horizon, events_synthetic)
             if column not in events.columns:
-                detail = "Column not present in the delivered file."
+                detail = "Not computed yet: the delivered file has no such column."
             elif status == NOT_YET:
                 detail = "Window incomplete as of retrieval date."
             else:
@@ -207,6 +209,10 @@ def coverage_funnel(roster, cohort, audit, features, metrics) -> pd.DataFrame:
     if cohort is not None and "factor_proxy_abnormal_20d_return_pct" in cohort.columns:
         complete_20d = int(cohort["factor_proxy_abnormal_20d_return_pct"].notna().sum())
 
+    car_01 = None
+    if cohort is not None and "car_0_1_pct" in cohort.columns:
+        car_01 = int(cohort["car_0_1_pct"].notna().sum())
+
     located = cleared = None
     if audit is not None:
         located_mask = audit["transcript_available"].astype(str).str.lower().str.startswith("yes")
@@ -236,6 +242,8 @@ def coverage_funnel(roster, cohort, audit, features, metrics) -> pd.DataFrame:
          "Fixed point-in-time universe."),
         ("Verified Q2 2026 events", n(cohort), "Gus",
          "Fiscal quarter ending Apr 1 – Jun 30, 2026, with sourced EPS and timestamp."),
+        ("Events with CAR[0,1] (checkpoint)", car_01, "Gus",
+         "Checkpoint outcome from easy_es (Fama-French 5 factors)."),
         ("Complete 20-session outcome", complete_20d, "Gus",
          "Primary outcome observed for the full window."),
         ("Transcript located", located, "Transcript coordination",
