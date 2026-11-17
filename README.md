@@ -290,10 +290,16 @@ IDs do not match real events; no real transcript-feature merge is available.
 
 ## Run the pilot
 
-Run commands from the repository root:
+Run commands from the repository root with **Python 3.12** (`.python-version`).
+`easy_es` requires pandas < 2.3, which crashes on Python 3.14. Versions are
+pinned in `requirements.txt`; `requirements-lock.txt` pins the full tested
+environment for reproducible reruns.
 
 ```bash
-pip install -r requirements.txt
+# one-time setup with uv (https://docs.astral.sh/uv/)
+uv venv --python 3.12 .venv && source .venv/bin/activate
+uv pip install -r requirements-lock.txt
+# without uv: python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements-lock.txt
 python code/pead_pipeline.py --as-of 2026-11-06
 python code/build_synthetic_checkpoint.py
 python code/extract_transcript_features.py \

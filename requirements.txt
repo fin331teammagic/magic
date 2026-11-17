@@ -1,6 +1,11 @@
-pandas
-numpy
-yfinance
-lxml
-streamlit
+# Python 3.12 (see .python-version). easy_es 0.1.8 requires pandas<2.3, and
+# pandas 2.2.x crashes on Python 3.14, so use 3.12 for every run.
+# Exact versions tested together: 117/117 tests pass (2026-11-17).
+# Full transitive pin set for byte-identical reruns: requirements-lock.txt
+pandas==2.2.3
+numpy==2.5.5
+yfinance==1.8.0
+lxml==6.1.3
+streamlit==1.67.0
+altair==6.3.0
 easy_es==0.1.8
