@@ -278,6 +278,14 @@ with results_tab:
         "trading day. This is distinct from the project's **final outcome**, the abnormal return over the 20 "
         "trading sessions after the reaction session, which the full study will use."
     )
+    if cohort.available and "car_0_1_pct" in cohort.frame.columns:
+        st.info(
+            "**Real data is in:** {:,} Q2 2026 events with CAR[0,1] and the Run 1 Yahoo variables "
+            "(see *Event explorer*). The model runs below stay **synthetic on purpose**: per the instructor "
+            "audit (A2), `specs_tried.md` must fix the models, split and inference method *before* the real "
+            "holdout is evaluated.".format(int(cohort.frame["car_0_1_pct"].notna().sum())),
+            icon="📌",
+        )
     if not (final_ds.available and runs_ds.available):
         awaiting("the merged final dataset", "The final-shape dataset and model runs are not available.",
                  ["Run 1 to 3 holdout R², MAE and RMSE", "Which variables move CAR[0,1]",
@@ -542,15 +550,76 @@ with tabs[3]:
         if events_ds is pilot:
             pilot_banner()
         df = events.copy()
-        if roster is not None:
+        if roster is not None and "company" not in df.columns:
             df = df.merge(roster[["Symbol", "Security", "GICS Sector"]].rename(
                 columns={"Symbol": "ticker", "Security": "company", "GICS Sector": "sector"}), on="ticker", how="left")
+        CAR_METHOD = "CAR[0,1], Fama-French 5 (checkpoint)"
+        methods = ([CAR_METHOD] if "car_0_1_pct" in df.columns else []) + [
+            "ETF factor proxies (primary)", "SPY buy-and-hold (robustness)"]
         c1, c2, c3 = st.columns([2, 1, 2])
-        method = c1.segmented_control(
-            "Return method",
-            ["ETF factor proxies (primary)", "SPY buy-and-hold (robustness)"],
-            default="ETF factor proxies (primary)", required=True,
-        )
+        method = c1.segmented_control("Return method", methods, default=methods[0], required=True)
+    if events is not None and method == CAR_METHOD:
+        f1, f2 = st.columns([1, 2])
+        primary_only = f1.toggle("Primary timing sample only", value=True,
+                                 help="SEC filing time and Yahoo agree on day 0. Gus recommends this sample for "
+                                 "the main analysis; all events are a robustness check.")
+        sectors = sorted(df["gics_sector"].dropna().unique()) if "gics_sector" in df.columns else []
+        picked_sectors = f2.multiselect("Sectors", sectors, default=sectors)
+        view = df.copy()
+        if primary_only and "primary_timing_sample" in view.columns:
+            view = view[view["primary_timing_sample"].astype(str).str.lower() == "true"]
+        if sectors:
+            view = view[view["gics_sector"].isin(picked_sectors)]
+        car = view["car_0_1_pct"]
+        k = st.columns(4)
+        k[0].metric("Events shown", "{:,}".format(len(view)), border=True)
+        k[1].metric("With CAR[0,1]", "{:,}".format(int(car.notna().sum())), border=True,
+                    help="Blank when easy_es dropped the event (e.g. too few estimation days). Never zero-filled.")
+        k[2].metric("Median CAR[0,1]", "—" if car.dropna().empty else "{:+.2f}%".format(car.median()), border=True)
+        k[3].metric("Share positive", "—" if car.dropna().empty else "{:.0%}".format((car.dropna() > 0).mean()),
+                    border=True)
+        a, b = st.columns(2, gap="large")
+        with a:
+            st.markdown("**EPS surprise vs. CAR[0,1]**")
+            st.altair_chart(charts.binned_relationship_chart(
+                view.assign(eps_surprise_pct=view["eps_surprise_pct"].clip(-50, 50)),
+                "eps_surprise_pct", "EPS surprise (%, capped at ±50 for display)", "car_0_1_pct", "CAR[0,1] (%)"),
+                width="stretch")
+            st.caption("Orange line is a simple straight-line fit for orientation, not the study's model. "
+                       "Yahoo consensus is not point-in-time verified.")
+        with b:
+            st.markdown("**Day-0 vs. day-1 abnormal return**")
+            st.altair_chart(charts.binned_relationship_chart(view, "ar_day0_pct", "Day-0 abnormal return (%)",
+                                                             "ar_day1_pct", "Day-1 abnormal return (%)"),
+                            width="stretch")
+            st.caption("CAR[0,1] = day 0 + day 1. Shows whether the reaction continues or reverses the next day.")
+        st.markdown("**Event-level data**")
+        cols = [c for c in ["ticker", "company", "gics_sector", "fiscal_period_end", "earnings_timestamp",
+                            "release_timing", "timing_check", "eps_actual", "eps_estimate", "eps_surprise_pct",
+                            "ar_day0_pct", "ar_day1_pct", "car_0_1_pct", "car_0_1_status"] if c in view.columns]
+        num = st.column_config.NumberColumn
+        st.dataframe(view[cols].sort_values("earnings_timestamp"), hide_index=True, column_config={
+            "ticker": "Ticker", "company": "Company", "gics_sector": "Sector",
+            "fiscal_period_end": "Fiscal period end", "earnings_timestamp": "Release time (SEC 8-K)",
+            "release_timing": "Timing", "timing_check": "Yahoo check",
+            "eps_actual": num("EPS actual", format="%.2f"), "eps_estimate": num("EPS consensus", format="%.2f"),
+            "eps_surprise_pct": num("EPS surprise", format="%.2f%%"),
+            "ar_day0_pct": num("AR day 0", format="%.2f%%"), "ar_day1_pct": num("AR day 1", format="%.2f%%"),
+            "car_0_1_pct": num("CAR[0,1]", format="%.2f%%"), "car_0_1_status": "CAR status"})
+        st.download_button("Download shown events (CSV)", view.to_csv(index=False).encode(),
+                           "q2_2026_cohort_filtered.csv", mime="text/csv")
+        with st.expander("How CAR[0,1] is computed"):
+            st.markdown(
+                """
+- **easy_es 0.1.8**, Fama-French 5-factor model (official Kenneth French daily factors), estimated over
+  the window before each event. **CAR[0,1]** is the abnormal return on day 0 plus day 1.
+- **Day 0** is the first trading session that could react: releases at or after 4:00 pm New York time map
+  to the next session. Times come from the SEC 8-K Item 2.02 filing, checked against Yahoo.
+- Blank cells mean the value is unavailable. They are never treated as zero.
+- Details: `docs/GUS_DATA_DICTIONARY.md`.
+"""
+            )
+    elif events is not None:
         horizon = c2.selectbox("Forward window", [20, 5, 60], format_func=lambda h: "{} sessions".format(h))
         tick_opts = sorted(df["ticker"].unique())
         picked = c3.multiselect("Companies", tick_opts, default=tick_opts)
@@ -699,7 +768,10 @@ with tabs[4]:
         else:
             ev = cohort.frame if cohort.available else None
         lang_cols = language_feature_columns(feats)
-        if ev is None:
+        outcome_title = "20-session ETF-proxy abnormal return (%)"
+        if ev is not None and outcome_col not in ev.columns and "car_0_1_pct" in ev.columns:
+            outcome_col, outcome_title = "car_0_1_pct", "CAR[0,1] (%), checkpoint outcome"
+        if ev is None or outcome_col not in ev.columns:
             st.info("Features are delivered, but there is no cohort output to join them to yet.")
         elif not lang_cols:
             st.error("Features file has no columns starting with 'lang_'.")
@@ -715,7 +787,7 @@ with tabs[4]:
                     c1.caption("{}: `{}`".format(meta, feats[meta].dropna().iloc[0] if feats[meta].notna().any() else "—"))
             with c2:
                 st.altair_chart(charts.feature_scatter(joined, feature, outcome_col,
-                                                       "20-session ETF-proxy abnormal return (%)"), width="stretch")
+                                                       outcome_title), width="stretch")
 
 # --------------------------------------------------------------------------
 # 6. Methods and limitations
