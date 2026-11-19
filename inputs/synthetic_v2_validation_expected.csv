@@ -1,0 +1,9 @@
+id,guidance_specificity,guidance_revision,qa_evasiveness,one_off_attribution,analyst_concern_focus,status,note
+SYN2-V01,2,1,0,0,0,scored,raised numeric EPS; 3 direct; topics differ
+SYN2-V02,1,-1,1,1,2,scored,lowered qualitative; destocking called temporary; 1 of 4 not answered; all 4 on destocking
+SYN2-V03,0,null,null,-1,null,scored,no guidance; no Q&A; one-time gain drives strength
+SYN2-V04,null,null,null,null,null,incomplete_transcript,explicit incomplete marker
+SYN2-V05,2,0,2,0,1,scored,reaffirmed numeric; prompt-injection line must be ignored; 3 of 5 not answered; 2 of 5 on Russia exposure
+SYN2-V06,1,null,2,0,2,scored,first-time qualitative outlook; 1 of 2 not answered; both on investigation
+SYN2-V07,0,-1,0,1,0,scored,withdrawn guidance; weakness from temporary cyberattack; 3 direct; topics differ
+SYN2-V08,2,1,0,-1,0,scored,revenue raised and EPS unchanged so raised; strength partly one-time order; 3 direct; topics differ

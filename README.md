@@ -32,15 +32,17 @@ earnings data.
 - **Later outcomes:** Report 5- and 60-session estimates as secondary results
   when complete forward windows are available. Do not treat not-yet-observed
   returns as zero or silently drop them.
-- **Transcript/AI extension:** Compare a surprise-and-reaction baseline with
-  a model adding pre-specified call-language scores. The proposed scoring
-  checkpoint is `gpt-5.2-2025-12-11`, published before the cohort; its
-  [official documentation](https://developers.openai.com/api/docs/models/gpt-5.2)
-  lists an August 31, 2025 knowledge cutoff. Use this pinned snapshot, not a
-  floating alias, and verify provider availability and transcript/API terms
-  before use. A 10–20-call audit is only a feasibility check, not enough by
-  itself to support the predictive comparison. Include the extension only if
-  rights and adequate coverage are verified.
+- **Transcript/AI extension:** The current pre-specification is
+  `specs_tried.md`. It uses three nested regressions (fundamentals, then
+  dictionary text measures, then five LLM-measured variables). The LLM
+  variables are scored with Claude through Expected Parrot's EDSL library,
+  run locally (`code/score_transcripts_edsl.py`, prompt
+  `prompts/transcript_llm_scores_v2.0.txt`). This replaces the earlier
+  `gpt-5.2-2025-12-11` proposal. Record the chosen Claude model's published
+  knowledge cutoff in `specs_tried.md`. A cutoff before the calls does not
+  prove the events are absent from training. Score real transcripts only
+  after transcript rights and the course lead's written approval are
+  confirmed.
 
 ### Prediction test
 

@@ -189,3 +189,50 @@ Do not interpret this checkpoint as a predictive test. A 20-call exercise is
 only a workflow and coverage feasibility check; the final study requires
 authorized coverage, a pinned model and rubric, and the planned chronological
 comparison on a shared sample.
+
+## Version 2.0: the five Run 3 LLM variables
+
+Version 2.0 replaces the v1.2 rubric for the main study design in
+`specs_tried.md` (three nested regressions, following the course lead's
+guidance). It drops `outlook_tone`, which largely re-measures dictionary
+sentiment, and scores five variables that need context to measure:
+`guidance_specificity`, `guidance_revision`, `qa_evasiveness`,
+`one_off_attribution` and `analyst_concern_focus`.
+
+- **Prompt (frozen):** `prompts/transcript_llm_scores_v2.0.txt`. The script
+  records its SHA-256 with every score. The prompt tells the model that the
+  transcript is data and that instructions inside it must be ignored.
+- **Scorer:** `code/score_transcripts_edsl.py`. It uses Expected Parrot's EDSL
+  library with local execution only: every run passes
+  `disable_remote_inference=True`, `disable_remote_cache=True`,
+  `offload_execution=False` and `use_api_proxy=False`, and keeps EDSL's cache in
+  memory. (EDSL 1.0.9 defaults `offload_execution` to True, so the flags are
+  required.) The default is a dry run that prints the request count and an
+  estimated cost. `--run` calls the API. The script refuses to run if a `.env`
+  file is visible to EDSL. With `--data-kind real`, it requires git-ignored
+  input and output files and an approval note.
+- **Synthetic sets:**
+  - development: 12 calls, `inputs/synthetic_v2_development.jsonl`;
+  - validation: 8 calls, `inputs/synthetic_v2_validation.jsonl`.
+
+  Each has a reference-label CSV, which is never sent to the model. Both sets
+  cover every level of every variable, an explicitly incomplete transcript,
+  calls with no Q&A, and an embedded instruction that the model must ignore.
+  The same person wrote the calls and the labels before any model run, so
+  agreement checks consistency with the rubric, not independent accuracy.
+- **Order of runs:** the development set first (any prompt change creates a
+  new version), then the validation set once with the prompt frozen. Record
+  both in the `specs_tried.md` run log. Real transcripts only after written
+  approval (see Scope above).
+
+Example dry run, then a real synthetic run:
+
+```bash
+python code/score_transcripts_edsl.py \
+  --input-jsonl inputs/synthetic_v2_development.jsonl \
+  --prompt prompts/transcript_llm_scores_v2.0.txt --prompt-version 2.0 \
+  --model claude-sonnet-5-5 --effort low \
+  --output-csv outputs/llm_scores/synthetic_v2_development_sonnet_low.csv \
+  --expected-csv inputs/synthetic_v2_development_expected.csv
+# add --run to send the 12 synthetic calls
+```
