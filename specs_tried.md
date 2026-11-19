@@ -125,10 +125,12 @@ Proposed variables, scored from the transcript only:
 - `outlook_tone` (prompt v1.2) is **dropped** from the primary run under the
   rule in Section 1, because it largely re-measures sentiment. It may appear
   in a robustness run.
-- **Rubric:** each new variable gets a written rubric with examples in
-  `TRANSCRIPT_CHECKPOINT.md` as prompt version 2.0. The prompt is frozen and
-  checked on the synthetic calls before any real transcript is scored, and
-  the synthetic results are recorded in Section 8.
+- **Rubric:** the exact definitions and thresholds are in the frozen prompt
+  `prompts/transcript_llm_scores_v2.0.txt` (branch `abby/llm-rubric-v2`),
+  scored by `code/score_transcripts_edsl.py`. If the table above and the
+  prompt differ, the prompt governs. The prompt is checked on the 12-call
+  synthetic development set and then, unchanged, on the 8-call validation set
+  before any real transcript is scored. Both runs are recorded in Section 8.
 - **Input:** only the transcript text for that call. No returns, prices,
   news or dates after the call. The prompt tells the model to treat the
   transcript as data and to ignore any instructions inside it.
@@ -143,6 +145,13 @@ Proposed variables, scored from the transcript only:
 - **Execution:** each call is scored once with the frozen prompt. Calls that
   fail or don't parse are retried at most twice, then recorded as missing.
   Transcript text and raw model outputs are not committed.
+- **Transcript coverage [TEAM]:** the course's licensed transcript dataset
+  (S&P Capital IQ via WRDS, kept locally in git-ignored `restricted_data/`)
+  covers calls from 2024-01-05 to 2025-12-19. It does **not** include the
+  July–August 2026 calls in the Q2 2026 cohort. Either find a permitted
+  source for the 2026 calls or change the cohort to a quarter the dataset
+  covers. Changing the cohort would also change the LLM leakage question,
+  because 2024–2025 calls fall before every current Claude model's cutoff.
 - **Rights:** scoring real transcripts requires a cleared source and written
   approval from the course lead to send transcript text to the model
   provider (`STATUS.md` still records a prohibition).
