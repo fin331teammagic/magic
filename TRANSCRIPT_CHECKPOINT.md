@@ -6,13 +6,26 @@ This is a low-cost workflow check, not the final research scoring protocol or
 evidence about the S&P 500 cohort. Use synthetic transcripts only with
 external AI.
 
-Professor Bowen's current instruction prohibits uploading licensed transcript
-text to GitHub or sending it to external AI services. Do not send real
-transcripts to Claude, Expected Parrot, or any other external service. Keep
-any authorized real files in approved local storage and use local processing
-only when the provider terms and project instructions allow it. A future
-change to this rule requires explicit written authorization and a fresh terms
-review.
+Licensed transcript text must never be uploaded to GitHub, pasted into a web
+chat, or sent to Expected Parrot's servers.
+
+Update, 2026-11-19. Professor Bowen's latest message describes the intended
+route: run EDSL on our own computer, with Expected Parrot's remote
+inference and cache turned off, and send transcripts straight to Anthropic's
+API under the course's enterprise account, which he understands has a
+no-training provision. His message conditions this on that access being in
+place ("assuming that I have access to it"), and his earlier data memo says
+cloud models stay off limits until he confirms the enterprise setup. So
+before any real-transcript run:
+
+1. get his written confirmation that the enterprise account is set up and
+   that we may send the course transcripts through it, and record it in
+   `--approval-note`;
+2. use an `ANTHROPIC_API_KEY` issued by that enterprise workspace, not a
+   personal key (the scorer checks only that a key is set, not which account
+   it belongs to).
+
+Until both are done, use synthetic transcripts only.
 
 The final study's proposed model remains the pinned checkpoint documented in
 `PROPOSAL.md`; this exploratory Claude checkpoint does not replace it.
@@ -235,4 +248,67 @@ python code/score_transcripts_edsl.py \
   --output-csv outputs/llm_scores/synthetic_v2_development_sonnet_low.csv \
   --expected-csv inputs/synthetic_v2_development_expected.csv
 # add --run to send the 12 synthetic calls
+```
+
+## Real transcripts for the Q2 2026 cohort (built 2026-11-19; not yet scored)
+
+- **Data:** the course's S&P Capital IQ transcripts (via WRDS), 2024-01-05 to
+  2026-08-07, 5,374 calls, in `restricted_data/` (git-ignored) as
+  `*_2024_2026.*`. The earlier `*_2024_2025.*` download, which stopped at
+  2025-12-19, is archived in `restricted_data/archive_2024_2025/`.
+- **Matching:** `code/build_transcript_inputs.py` matches each event in
+  `inputs/q2_2026_events.csv` to a live earnings call (pre-recorded calls
+  excluded) by CIK, then ticker, with a call date 1 day before to 3 days after
+  the earnings date. It writes, inside `restricted_data/llm_inputs/`, a
+  match file with no transcript text and `q2_2026_calls.jsonl`, the scorer's
+  input. `--after-cutoff-only` writes only calls after the training cutoff.
+- **Coverage (499 cohort events):**
+
+  | Status | Events |
+  |---|---|
+  | matched within the earnings-date window | 452 |
+  | matched within the window, two candidate calls (Micron held two sessions; the closer one is used) | 1 |
+  | matched by fiscal period end (see below) | 21 |
+  | not matched: call after the data end (2026-08-07) | 9 |
+  | not matched: firm not in the transcript data | 14 |
+  | not matched: no call for that quarter (AES, SMCI) | 2 |
+  | **matched, total** | **474** |
+
+  Unmatched events stay in the match file with a reason. The 25 unmatched
+  events must be reported as missing transcript coverage, not dropped.
+- **Earnings-date mismatch, 21 events:** for ABBV, APA, APO, ARES, BIIB, EOG,
+  EQT, ES, FANG, GEHC, HCA, HONA, IBM, NKE, OXY, PGR, PNR, PRU, REGN, RMD and
+  TSLA, no call falls near the cohort's `earnings_timestamp` (an SEC 8-K
+  Item 2.02 acceptance time). The earnings call is 6 to 37 days later; for
+  example, Tesla's 8-K is dated July 2 and its call July 22. These events are
+  matched to the first call after the fiscal period end and flagged
+  `matched_by_period_end`. **Their `day0_session`, and therefore the event
+  window and CARs, may be dated on an earlier 8-K rather than the results
+  release; check them before the return analysis.**
+- **Training cutoff:** Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 all list a
+  June 2026 reliable-knowledge and training-data cutoff (Anthropic models
+  overview, retrieved 2026-11-19). 395 of the 474 matched calls are after
+  2026-06-30. The other 79 (calls from 2026-04-23 to 2026-06-30, mostly
+  fiscal quarters ending in April or May) fall within the training window
+  and are flagged `after_training_cutoff = False`. Decide before scoring
+  whether to score only the 395 or to score all and test the 79 separately.
+  A cutoff before a call does not prove the call is absent from training.
+- **Estimated cost** (from word counts, about 1.4 tokens per word, at low
+  effort): 474 calls are about 6.0M input tokens, about $0.62 with
+  Haiku 5.5 and $12.40 with Sonnet 5.5; the 395 post-cutoff calls about
+  $0.52 and $10.34. The longest call is about 16,800 words, well under
+  Haiku 5.5's 100K-token price tier and every model's 1M context window. Run
+  the scorer's dry run (no `--run`) for its own estimate.
+
+Real-transcript run, once the two approval steps in Scope are done:
+
+```bash
+python code/build_transcript_inputs.py            # add --after-cutoff-only if chosen
+python code/score_transcripts_edsl.py \
+  --input-jsonl restricted_data/llm_inputs/q2_2026_calls.jsonl \
+  --prompt prompts/transcript_llm_scores_v2.0.txt --prompt-version 2.0 \
+  --model claude-haiku-5-5 --effort low --data-kind real \
+  --approval-note "<who approved, date, enterprise workspace>" \
+  --output-csv restricted_data/llm_scores/q2_2026_haiku_low.csv
+# dry run first; add --run to send, and try --limit 3 before the full set
 ```

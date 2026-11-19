@@ -42,7 +42,13 @@ earnings data.
   knowledge cutoff in `specs_tried.md`. A cutoff before the calls does not
   prove the events are absent from training. Score real transcripts only
   after transcript rights and the course lead's written approval are
-  confirmed.
+  confirmed. Transcripts come from the course's S&P Capital IQ files
+  (2024-01-05 to 2026-08-07, git-ignored in `restricted_data/`);
+  `code/build_transcript_inputs.py` matches 474 of the 499 cohort events to a
+  call. All current Claude models list a June 2026 training cutoff, so 79 of
+  those calls fall inside the training window. Coverage, the 21 events whose
+  cohort earnings date does not match the call, and the approval steps are in
+  `TRANSCRIPT_CHECKPOINT.md`.
 
 ### Prediction test
 
