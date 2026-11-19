@@ -302,6 +302,20 @@ def check_safety(args, calls):
         raise SystemExit("Refusing to run: ANTHROPIC_API_KEY is not set.")
 
 
+def summarize_exceptions(results):
+    """Return short, de-duplicated messages for exceptions EDSL recorded."""
+    messages = []
+    history = getattr(results, "task_history", None)
+    for interview in getattr(history, "total_interviews", []) or []:
+        for exceptions in getattr(interview, "exceptions", {}).values():
+            for entry in exceptions:
+                error = getattr(entry, "exception", entry)
+                text = f"{type(error).__name__}: {str(error)[:400]}"
+                if text not in messages:
+                    messages.append(text)
+    return messages
+
+
 def run_scoring(args, calls, template):
     """Score every call with EDSL, locally, and return output rows."""
     import edsl
@@ -325,6 +339,8 @@ def run_scoring(args, calls, template):
         progress_bar=False,
         print_exceptions=True,
     )
+    for message in summarize_exceptions(results):
+        print(f"EDSL exception: {message}")
     columns = [
         "scenario.id",
         "answer.scores",
@@ -332,9 +348,14 @@ def run_scoring(args, calls, template):
         "raw_model_response.scores_input_tokens",
         "raw_model_response.scores_output_tokens",
     ]
+    available = set(results.columns)
+    present = [column for column in columns if column in available]
     by_id = {}
-    for call_id, answer, raw, input_tokens, output_tokens in results.select(*columns).to_list():
-        by_id[call_id] = (answer, raw, input_tokens, output_tokens)
+    for values in results.select(*present).to_list():
+        if len(present) == 1:
+            values = (values,)
+        record = dict(zip(present, values))
+        by_id[record["scenario.id"]] = tuple(record.get(column) for column in columns[1:])
 
     run_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     prompt_sha = hashlib.sha256(template.encode("utf-8")).hexdigest()
@@ -434,7 +455,13 @@ def main(argv=None):
         f"cost about ${actual:.4f} at list prices."
     )
     if args.expected_csv:
-        report = compare_to_expected(rows, read_expected(args.expected_csv))
+        scored_ids = {call["id"] for call in calls}
+        expected = {
+            key: value
+            for key, value in read_expected(args.expected_csv).items()
+            if key in scored_ids
+        }
+        report = compare_to_expected(rows, expected)
         print(f"Compared with reference labels for {report['compared']} calls:")
         for field, count in report["agreement"].items():
             print(f"  {field}: {count}/{report['compared']} agree")
