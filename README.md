@@ -1,5 +1,8 @@
 # Team Magic: Earnings Calls and Post-Earnings Returns
 
+**Live dashboard:** https://team-magic-pead.streamlit.app
+(deployed from `main`, `dashboard/pead_app.py`, Python 3.12)
+
 ## Project question
 
 For S&P 500 companies reporting fiscal quarters that ended in calendar Q2
