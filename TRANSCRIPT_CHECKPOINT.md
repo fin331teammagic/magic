@@ -300,15 +300,51 @@ python code/score_transcripts_edsl.py \
   Haiku 5.5's 100K-token price tier and every model's 1M context window. Run
   the scorer's dry run (no `--run`) for its own estimate.
 
-Real-transcript run, once the two approval steps in Scope are done:
+Real-transcript run, once the two approval steps in Scope are done.
 
-```bash
-python code/build_transcript_inputs.py            # add --after-cutoff-only if chosen
-python code/score_transcripts_edsl.py \
-  --input-jsonl restricted_data/llm_inputs/q2_2026_calls.jsonl \
-  --prompt prompts/transcript_llm_scores_v2.0.txt --prompt-version 2.0 \
-  --model claude-haiku-5-5 --effort low --data-kind real \
-  --approval-note "<who approved, date, enterprise workspace>" \
-  --output-csv restricted_data/llm_scores/q2_2026_haiku_low.csv
-# dry run first; add --run to send, and try --limit 3 before the full set
-```
+**Updated 2026-11-22.** The sample decision is made: only the 395
+post-cutoff calls (`specs_tried.md` Amendment 2). Sonnet 5.5 is the proposed
+model; it agreed with 47 of 48 synthetic validation labels (§8, runs 6–8).
+The [TEAM] sign-off on the model is still pending.
+
+The input file is already built:
+`restricted_data/llm_inputs/q2_2026_calls_after_cutoff.jsonl`. EDSL needs
+Python 3.12. The `edsl312` conda environment has it, and `magic312` has the
+pinned project environment.
+
+1. Score the calls.
+
+   ```bash
+   export ANTHROPIC_API_KEY=...   # enterprise-workspace key; never commit or paste it
+   S="conda run -n edsl312 python code/score_transcripts_edsl.py \
+     --input-jsonl restricted_data/llm_inputs/q2_2026_calls_after_cutoff.jsonl \
+     --prompt prompts/transcript_llm_scores_v2.0.txt --prompt-version 2.0 \
+     --model claude-sonnet-5-5 --effort low --data-kind real \
+     --approval-note '<who approved, date, enterprise workspace>' \
+     --output-csv restricted_data/llm_outputs/q2_2026_sonnet_scores.csv"
+   eval "$S"                       # dry run: plan and cost, nothing sent
+   eval "$S --limit 3 --run"       # three calls first; check the output
+   eval "$S --run --overwrite"     # all 395 (about $10 with Sonnet)
+   ```
+
+2. Run the pre-specified nested comparison. It evaluates the holdout once,
+   so log it in `specs_tried.md` §8.
+
+   ```bash
+   conda run -n magic312 python code/run_nested_models.py \
+     --llm-scores restricted_data/llm_outputs/q2_2026_sonnet_scores.csv
+   ```
+
+   It writes `outputs/model_runs.csv`, `model_coefficients.csv`,
+   `run_predictions.csv` and `nested_sample_flow.csv`. To show them on the
+   dashboard, point the `model_runs`, `model_coefficients` and
+   `run_predictions` entries in `dashboard/data_registry.py` at these files.
+
+**Before scoring: open [TEAM] decision.** The prompt returns
+`guidance_revision = null` when the call gives no way to compare with prior
+guidance. Under §2's complete-case rule, every such call drops out of all
+three runs. Decide, and record as an amendment before scoring, whether to:
+- keep complete case, as now; or
+- code null as its own category, for example 0 plus a `no_prior_guidance`
+  indicator. That is not a zero-fill of missing data, because null is a
+  defined answer.
