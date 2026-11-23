@@ -9,14 +9,16 @@ Team Magic. This responds to `audits/04_instructor_audit.md` (audited commit
 > and the old links redirect.
 >
 > Still open:
-> - Runs 2–3: waiting on API access under the course's enterprise account.
+> - Runs 2–3: the Run 3 scores now exist. You scored the calls on a local
+>   model (PR #22, run log row 10). The models run once the team adopts
+>   Amendment 5 (draft in `specs_tried.md`).
 
 ## Summary
 
 | Finding | Response | Where |
 |---|---|---|
-| B1 · No real-data results | **Fixed** for Run 1. Runs 2–3 are waiting on transcript scoring | `31df28b` |
-| B2 · Transcripts don't cover the cohort | **Fixed** by amendment, option (a). Scoring waits on API access | `971e1a3`, `d2164d9` |
+| B1 · No real-data results | **Fixed** for Run 1. Run 3 scores are in (PR #22); Runs 2–3 next | `31df28b`, `fef8d4c` |
+| B2 · Transcripts don't cover the cohort | **Fixed** by amendment, option (a). Calls scored locally | `971e1a3`, `d2164d9`, `fef8d4c` |
 | B3 · No live dashboard URL | **Fixed.** https://team-magic-pead.streamlit.app, linked at the top of the README | `065bbde` |
 | B4 · Unmerged branches | **Fixed.** `main` contains all three heads (`ebb0882`, `468ec02`, `3d463bc`) | `15a054c` |
 | B5 · README vs. plan outcome | **Fixed** | `a29a1e4` |

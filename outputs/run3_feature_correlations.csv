@@ -1,0 +1,6 @@
+,guidance_specificity,guidance_revision,qa_evasiveness,one_off_attribution,analyst_concern_focus,eps_surprise_pct,transcript_sentiment,management_prepared_sentiment,analyst_question_sentiment,uncertainty_word_proportion,congratulations_mentioned
+guidance_specificity,1.0,0.046,0.048,-0.086,0.001,0.084,-0.018,0.115,-0.136,0.022,0.067
+guidance_revision,0.046,1.0,-0.078,-0.051,-0.264,0.119,0.224,0.152,0.294,-0.104,0.148
+qa_evasiveness,0.048,-0.078,1.0,-0.01,0.137,0.048,-0.093,-0.089,-0.111,0.069,0.023
+one_off_attribution,-0.086,-0.051,-0.01,1.0,0.065,-0.259,0.003,0.02,-0.053,-0.104,-0.036
+analyst_concern_focus,0.001,-0.264,0.137,0.065,1.0,0.028,-0.09,-0.008,-0.31,0.075,-0.033

@@ -1,0 +1,6 @@
+variable,n,mean,sd,modal_value,modal_share,count_-1,count_0,count_1,count_2,count_null
+guidance_specificity,304,1.98,0.139,2.0,0.98,0,0,6,298,0
+guidance_revision,304,0.467,0.659,1.0,0.559,28,106,170,0,0
+qa_evasiveness,304,0.326,0.469,0.0,0.674,0,205,99,0,0
+one_off_attribution,304,0.082,0.692,0.0,0.516,61,157,86,0,0
+analyst_concern_focus,304,1.003,0.498,1.0,0.753,0,37,229,38,0

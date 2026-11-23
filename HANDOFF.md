@@ -14,8 +14,8 @@ Updated 2026-11-23 by Abby.
 | Pre-specification | Frozen, with Amendments 1–3 | `specs_tried.md` |
 | 2026 transcripts matched to the cohort | 474 of 499; 395 after the June 2026 model cutoff | `TRANSCRIPT_CHECKPOINT.md` |
 | Run 2 dictionary features | Built (local, no text committed) | `outputs/q2_2026_dictionary_features.csv` |
-| Run 3 LLM scores | **Blocked:** needs an enterprise API key (Abby asked Prof. Bowen) | `TRANSCRIPT_CHECKPOINT.md`, bottom |
-| Runs 1–3 comparison | Code ready, tested on invented data; runs once the scores exist | `code/run_nested_models.py` |
+| Run 3 LLM scores | **Done** by Prof. Bowen on a local model (Gemma 4), merged in PR #22: 394 of 395 parsed | `outputs/llm_scores_real/`, `docs/LOCAL_LLM_INSTRUCTOR_RUN.md` |
+| Runs 1–3 comparison | Code ready; reads the scores (304 primary events). **Waiting on the team's Amendment 5 answers** | `code/run_nested_models.py`, `specs_tried.md` Amendment 5 (draft) |
 | Live dashboard (audit B3) | **Live:** https://team-magic-pead.streamlit.app | README |
 | Day-0 mismatches (21 events) | Found and excluded from Runs 2–3 | `docs/DAY0_TRANSCRIPT_CHECK.md` |
 
@@ -49,9 +49,14 @@ amendment in `specs_tried.md` §8:
    complete-case rule, those calls drop out of all three runs. The
    alternative is to treat null as its own category: 0 plus a
    `no_prior_guidance` indicator.
-3. **Run 3 model.** Sonnet 5.5 is proposed. It agreed with 47/48 synthetic
-   validation labels vs. 39/48 for Haiku (§8, runs 6–8).
-4. **After the scores exist,** own the statistics slides from
+3. **Run 3 scores.** Prof. Bowen scored the calls with Gemma 4 on his own
+   computer (PR #22). Confirm we use them instead of Sonnet 5.5.
+4. **Sentiment gap:** both of its parts are already in Run 2, so adding the
+   gap there would be exactly collinear. Report it afterwards as
+   exploratory instead.
+
+All of these are in draft Amendment 5 at the bottom of `specs_tried.md`.
+5. **After Runs 1–3 run,** own the statistics slides from
    `outputs/model_runs.csv` and `outputs/model_coefficients.csv`.
 
 ## Michelle
@@ -68,12 +73,14 @@ amendment in `specs_tried.md` §8:
 
 ## Abby
 
-1. Get the enterprise API key with Prof. Bowen.
-   - No real transcript has been sent.
-   - Abby's personal key was used only on 20 invented calls.
-2. Score the 395 calls, then run `code/run_nested_models.py`. The steps are
-   at the bottom of `TRANSCRIPT_CHECKPOINT.md`.
-3. Finalize `audits/05_audit_response.md` once B3 and the scores are done.
+1. ~~Get the API key~~ Not needed: Prof. Bowen scored the calls locally.
+   No transcript was sent from our side; Abby's personal key was used only
+   on invented calls.
+2. Once the team answers Amendment 5, adopt it, then run
+   `code/run_nested_models.py --llm-scores
+   outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv`
+   and log it in `specs_tried.md` §8.
+3. Finalize `audits/05_audit_response.md` with the Run 2–3 results.
 
 ## Rules for everyone
 
@@ -91,6 +98,6 @@ amendment in `specs_tried.md` §8:
 
 | By | What |
 |---|---|
-| Tue Nov 24 | Cammy's decisions; Gus allows Streamlit in the org |
-| Before Thanksgiving | Scores and Runs 1–3, if the API key arrives |
+| Tue Nov 24 | Team answers Amendment 5; Abby runs Runs 1–3 |
+| Before Thanksgiving | Results on the dashboard; slides drafted |
 | Mon Dec 1 | Presentation from the live URL (9–10 minutes) |
