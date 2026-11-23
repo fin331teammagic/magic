@@ -16,18 +16,14 @@ Updated 2026-11-23 by Abby.
 | Run 2 dictionary features | Built (local, no text committed) | `outputs/q2_2026_dictionary_features.csv` |
 | Run 3 LLM scores | **Blocked:** needs an enterprise API key (Abby asked Prof. Bowen) | `TRANSCRIPT_CHECKPOINT.md`, bottom |
 | Runs 1–3 comparison | Code ready, tested on invented data; runs once the scores exist | `code/run_nested_models.py` |
-| Live dashboard (audit B3) | **Blocked:** the org must allow Streamlit (OAuth app restriction) | see Gus below |
+| Live dashboard (audit B3) | **Live:** https://team-magic-pead.streamlit.app | README |
 | Day-0 mismatches (21 events) | Found and excluded from Runs 2–3 | `docs/DAY0_TRANSCRIPT_CHECK.md` |
 
 ## Gus
 
-1. **Dashboard: allow Streamlit in the org.** Abby has repo admin and the
-   app is set up (`team-magic-pead.streamlit.app`). The org blocks outside
-   apps, so go to
-   github.com/organizations/fin331teammagic/settings/oauth_application_policy
-   → **Streamlit** → **Grant**, or click **Remove restrictions**.
-   Alternatively, make Abby an org **Owner** (People → Invite member), and
-   she can do it herself.
+1. ~~Dashboard~~ **Done, 2026-11-23.** Streamlit is allowed in the org and
+   the app is live. Optional: delete nothing; the app is in the
+   `fin331teammagic` workspace on share.streamlit.io.
 2. **Day-0 fix (optional, but it adds events).** For the 21 events in
    `docs/DAY0_TRANSCRIPT_CHECK.md`, the cohort timestamp is an earlier 8-K.
    - Find the 8-K that carries the quarterly earnings release. It is

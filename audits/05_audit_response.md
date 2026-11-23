@@ -9,8 +9,6 @@ Team Magic. This responds to `audits/04_instructor_audit.md` (audited commit
 > and the old links redirect.
 >
 > Still open:
-> - B3: the dashboard deploy is waiting on the organization approving
->   Streamlit;
 > - Runs 2–3: waiting on API access under the course's enterprise account.
 
 ## Summary
@@ -19,7 +17,7 @@ Team Magic. This responds to `audits/04_instructor_audit.md` (audited commit
 |---|---|---|
 | B1 · No real-data results | **Fixed** for Run 1. Runs 2–3 are waiting on transcript scoring | `31df28b` |
 | B2 · Transcripts don't cover the cohort | **Fixed** by amendment, option (a). Scoring waits on API access | `971e1a3`, `d2164d9` |
-| B3 · No live dashboard URL | **In progress.** Deploy is set up; waiting on the org to allow Streamlit | — |
+| B3 · No live dashboard URL | **Fixed.** https://team-magic-pead.streamlit.app, linked at the top of the README | `065bbde` |
 | B4 · Unmerged branches | **Fixed.** `main` contains all three heads (`ebb0882`, `468ec02`, `3d463bc`) | `15a054c` |
 | B5 · README vs. plan outcome | **Fixed** | `a29a1e4` |
 | CP2 A4 · Versions not pinned; Yahoo drift | Pins **fixed**. Drift is **disclosed** and contained | `ba726b7`, `971e1a3` |
@@ -128,20 +126,22 @@ IQ transcripts the course provided on 2026-11-19.
   - Haiku 5.5 agreed with 39 of 48, including one parse failure on the
     prompt-injection test call.
 
-## B3 · No live dashboard URL: in progress
+## B3 · No live dashboard URL: fixed
 
-The repository now lives in the `fin331teammagic` organization, so a team
-member can deploy it with admin rights. The Streamlit app is configured:
-- app file `dashboard/pead_app.py`;
-- branch `main`;
-- Python 3.12, matching `.python-version` and the pinned
-  `requirements.txt`;
-- address `team-magic-pead.streamlit.app`.
+**Live:** https://team-magic-pead.streamlit.app, linked at the top of
+`README.md` and in column G of the Team Projects sheet.
 
-The new organization has GitHub's OAuth app restrictions turned on, so an
-organization owner has to approve Streamlit before the deploy can run. When
-it is live, the URL goes at the top of the README and in column G of the
-sheet.
+- **Deployed from:** `fin331teammagic/magic`, branch `main`, file
+  `dashboard/pead_app.py`, Python 3.12, on 2026-11-23.
+- **Checked:** the health endpoint returns `ok` for a logged-out visitor.
+- **Dependencies:** the dashboard has its own `dashboard/requirements.txt`
+  (`065bbde`), with streamlit, pandas, numpy and altair pinned. That is
+  all it needs, because it only reads `outputs/`.
+  - Streamlit Cloud reads this file before the root `requirements.txt`.
+  - It was tested with Streamlit's AppTest: all 7 tabs load with no
+    exceptions, and the Findings tab shows the real Run 1 numbers.
+  - The research pipeline keeps the pinned Python 3.12 environment in the
+    root `requirements.txt` and `requirements-lock.txt`.
 
 ## B4 · Unmerged branches: fixed
 
