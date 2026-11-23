@@ -212,14 +212,14 @@ with tabs[0]:
         ("1 · Sample", "One observation = one company's quarterly earnings announcement. "
          "Universe: the S&P 500 list as of **June 30, 2026**, for fiscal quarters ending "
          "April 1 – June 30, 2026."),
-        ("2 · Outcome", "The **abnormal return** over the 20 trading sessions *after* the "
-         "announcement-day reaction, i.e. the return not explained by market, size and value "
-         "moves (measured with ETF proxies)."),
-        ("3 · Baseline model", "Predict that outcome from what is already known: the **EPS "
-         "surprise** and the **announcement-day reaction**. This captures classic "
-         "post-earnings drift."),
-        ("4 · Language test", "Add pre-specified **earnings-call language scores**. Fit on the "
-         "earliest 60% of events, test once on the latest 40%. Does prediction error fall?"),
+        ("2 · Outcome", "**CAR[0,1]**: the abnormal return on the call's day 0 and day 1, i.e. "
+         "the return not explained by the Fama–French five factors. The 20-session drift after "
+         "the reaction is a secondary outcome."),
+        ("3 · Run 1: fundamentals", "Explain and predict that outcome from what is known before "
+         "the call: **EPS surprise**, size, price-to-book, 52-week momentum and beta."),
+        ("4 · Runs 2–3: language", "Add **dictionary text measures** (Run 2), then "
+         "**LLM-measured variables** (Run 3). Fit on the earliest 60% of events, test once on "
+         "the latest 40%. Does each layer add anything?"),
     ]
     for col, (head, body) in zip(steps, step_text):
         with col.container(border=True, height="stretch"):
@@ -274,16 +274,16 @@ with results_tab:
     coefs_ds, preds_ds, vars_ds = data["model_coefficients"], data["run_predictions"], data["variables"]
     st.subheader("Does earnings-call language explain the stock's reaction?")
     st.markdown(
-        "**Checkpoint outcome: CAR[0,1]**, the cumulative abnormal return on the call day and the next "
-        "trading day. This is distinct from the project's **final outcome**, the abnormal return over the 20 "
-        "trading sessions after the reaction session, which the full study will use."
+        "**Primary outcome: CAR[0,1]**, the cumulative abnormal return on the call day and the next "
+        "trading day (`specs_tried.md` §3). The abnormal return over the 20 trading sessions after the "
+        "reaction session is a secondary outcome."
     )
     if cohort.available and "car_0_1_pct" in cohort.frame.columns:
         st.info(
             "**Real data is in:** {:,} Q2 2026 events with CAR[0,1] and the Run 1 Yahoo variables "
-            "(see *Event explorer*). The model runs below stay **synthetic on purpose**: per the instructor "
-            "audit (A2), `specs_tried.md` must fix the models, split and inference method *before* the real "
-            "holdout is evaluated.".format(int(cohort.frame["car_0_1_pct"].notna().sum())),
+            "(see *Event explorer*). **Real Run 1** (fundamentals) results are on the *Findings* tab. The "
+            "three-run layout below stays **synthetic** until Runs 2–3 are scored on real transcripts "
+            "(`specs_tried.md` §8).".format(int(cohort.frame["car_0_1_pct"].notna().sum())),
             icon="📌",
         )
     if not (final_ds.available and runs_ds.available):

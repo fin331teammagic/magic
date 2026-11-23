@@ -3,9 +3,21 @@
 ## Project question
 
 For S&P 500 companies reporting fiscal quarters that ended in calendar Q2
-2026, do pre-specified signals from earnings-call language improve
-chronological holdout prediction of 20-trading-session factor-proxy-adjusted
-returns beyond EPS surprise and the announcement reaction?
+2026, do variables measured from the earnings call, first with standard
+dictionary text analysis and then with an LLM, explain and predict the
+abnormal return around the call (CAR[0,1], Fama–French five-factor) beyond
+standard fundamental predictors? The design is fixed in
+[`specs_tried.md`](specs_tried.md): three nested OLS runs on the same events,
+with a chronological holdout evaluated once.
+
+**Current result (Run 1, fundamentals only, 2026-11-22):**
+- In-sample R² is 0.036 on 426 primary-sample events (clustered Wald
+  p = 0.0005).
+- Holdout out-of-sample R² is 0.004, which is not distinguishable from
+  forecasting the mean.
+- Files: [`outputs/model_comparison_metrics.csv`](outputs/model_comparison_metrics.csv)
+  and [`outputs/run1_coefficients.csv`](outputs/run1_coefficients.csv).
+- Runs 2–3 need the real transcripts scored (see `specs_tried.md` §8).
 
 Post-earnings announcement drift (PEAD) is established in prior research, so
 the project is not premised on rediscovering that positive surprises predict
@@ -24,11 +36,15 @@ earnings data.
 - **Earnings cohort:** Fiscal-quarter end dates from April 1 through June 30,
   2026, with the corresponding earnings calls and announcements. Record both
   the fiscal period end and public announcement timestamp.
-- **Primary outcome:** Cumulative abnormal return over the 20 full trading
+- **Primary outcome:** `car_0_1_pct`, the cumulative abnormal return over the
+  call's day 0 and day 1 (easy_es 0.1.8, official Fama–French five daily
+  factors), as in `ANALYSIS_PLAN.md` and `specs_tried.md` §3.
+- **Secondary outcome:** Cumulative abnormal return over the 20 full trading
   sessions after the announcement-reaction session, estimated with three
-  ETF-based factor proxies. Keep the announcement reaction separate from
-  those forward sessions. The pipeline now computes these proxies for the
-  four-company pilot; that convenience sample is still not the target study.
+  ETF-based factor proxies (not French factors). The announcement reaction
+  is kept separate from those forward sessions. The pipeline computes these
+  proxies for the four-company pilot only; they are not yet built for the
+  cohort.
 - **Later outcomes:** Report 5- and 60-session estimates as secondary results
   when complete forward windows are available. Do not treat not-yet-observed
   returns as zero or silently drop them.

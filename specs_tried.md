@@ -240,6 +240,28 @@ failed and discarded runs.
 | 4 | 2026-11-22 | Abby | real cohort, `outputs/q2_2026_cohort.csv` @ `a6ef269`, primary sample | CAR[0,1] | Run 1 (Amendment 1), `code/run_models.py` @ `971e1a3` | 426 in-sample; 292 / 134 | **Yes, once** | `outputs/model_comparison_metrics.csv` (`baseline`), `holdout_predictions.csv`, `run1_coefficients.csv`, `run1_sample_flow.csv` |
 | 5 | 2026-11-22 | Abby | same, all events (robustness) | CAR[0,1] | same | 433 in-sample; 294 / 139 | **Yes, once** | `model_comparison_metrics.csv` (`baseline_all_events`), `run1_coefficients.csv` |
 
+| 6 | 2026-11-22 | Abby | synthetic v2.0 development set | rubric agreement | `claude-sonnet-5-5`, effort low, prompt v2.0 | 12 | n/a (synthetic) | `outputs/synthetic_v2_development_sonnet_scores.csv` |
+| 7 | 2026-11-22 | Abby | synthetic v2.0 validation set (8 invented calls), prompt unchanged | rubric agreement | `claude-haiku-5-5`, effort low, prompt v2.0 | 8 | n/a (synthetic) | `outputs/synthetic_v2_validation_haiku_scores.csv` |
+| 8 | 2026-11-22 | Abby | same | rubric agreement | `claude-sonnet-5-5`, effort low, prompt v2.0 | 8 | n/a (synthetic) | `outputs/synthetic_v2_validation_sonnet_scores.csv` |
+
+**Runs 3 and 6–8: rubric checks on invented calls.** Each cell is the number
+of labels agreeing with the reference, summed over the five variables plus
+`status`.
+
+| Model | Development (12 calls, 72 labels) | Validation (8 calls, 48 labels) | Parse errors | Cost |
+|---|---|---|---|---|
+| Haiku 5.5 | 65 / 72 | 39 / 48 | 1 of 8 (validation) | $0.002 + $0.001 |
+| Sonnet 5.5 | 70 / 72 | 47 / 48 | 0 | $0.044 + $0.028 |
+
+- **Haiku's parse error.** It was on SYN2-V05, the prompt-injection test
+  call. Haiku ignored the embedded instruction, as the prompt asks, but wrote
+  a sentence before its JSON, so the reply could not be parsed.
+- **Sonnet's misses.** Both development disagreements were
+  `analyst_concern_focus` 1 vs 2; the one validation disagreement was
+  `qa_evasiveness` 1 vs 2.
+- **Conclusion.** The results support the proposed Sonnet 5.5 for Run 3. The
+  [TEAM] model decision stays open until the team signs off.
+
 **Runs 4–5 results.** These come from the same script execution. The script
 was tested only on invented data before this run.
 
