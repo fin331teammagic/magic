@@ -243,6 +243,8 @@ failed and discarded runs.
 | 7 | 2026-11-22 | Abby | synthetic v2.0 validation set (8 invented calls), prompt unchanged | rubric agreement | `claude-haiku-5-5`, effort low, prompt v2.0 | 8 | n/a (synthetic) | `outputs/synthetic_v2_validation_haiku_scores.csv` |
 | 8 | 2026-11-22 | Abby | same | rubric agreement | `claude-sonnet-5-5`, effort low, prompt v2.0 | 8 | n/a (synthetic) | `outputs/synthetic_v2_validation_sonnet_scores.csv` |
 | 9 | 2026-11-22 | Abby | 474 matched real calls (local only; nothing sent) | — | Run 2 dictionary features, `code/build_dictionary_features.py` (Amendment 3). Feature build only, no model fit | 474 | No | `outputs/q2_2026_dictionary_features.csv` |
+| 10 | 2026-11-23 | Prof. Bowen | 474 matched real calls, on his own computer (nothing sent off it) | — | Run 3 LLM scoring: prompt v2.0 (SHA-256 `9a9bc0cb…`), Gemma 4 26B-A4B-it (Q6_K_XL GGUF), llama.cpp, EDSL 1.0.9 with remote features off, temperature 0. Scoring only, no model fit. Synthetic validation 8/8 calls agree on every field; development 12/12 parsed, 1 disagreement | 474 (472 parsed); 395 after the cutoff (394 parsed) | No | `outputs/llm_scores_real/` (PR #22); `docs/LOCAL_LLM_INSTRUCTOR_RUN.md` |
+| 11 | 2026-11-23 | Abby | Run 1–3 primary common sample (no outcome values read) | — | Predictor descriptives: Run 3 distributions; Spearman correlations with EPS surprise and Run 2, `code/describe_run3_features.py` | 304 | No | `outputs/run3_feature_distribution.csv`, `outputs/run3_feature_correlations.csv` |
 
 **Runs 3 and 6–8: rubric checks on invented calls.** Each cell is the number
 of labels agreeing with the reference, summed over the five variables plus
@@ -398,3 +400,37 @@ Adds one robustness row to §6. It does not change the primary analysis.
 - **Labeling:** results are reported as robustness, next to the primary
   table. The primary outcome stays easy_es `car_0_1_pct`.
 - **Status:** not yet run.
+
+**Amendment 5 · DRAFT, not yet adopted · 2026-11-23 · Abby · Run 3 scores.**
+To be finalized with the team's answers **before** any Run 2 or Run 3
+model fit. No outcome value has been read for the Run 2–3 sample.
+
+- **Scores used for Run 3:** Prof. Bowen's local run (run log row 10),
+  replacing the proposed Claude Sonnet 5.5. The enterprise API route in
+  Amendment 2 was not used, and no transcript was sent to any outside
+  service. **[TEAM: confirm]**
+- **Leakage:** Gemma 4's pre-training data is recorded as ending in
+  January 2025 (check Google's model card before citing it). The primary
+  sample stays the 395 calls after 2026-06-30, as in Amendment 2, so the
+  sample doesn't change after the scores are seen. Re-running on all 474
+  calls is an added robustness row. **[TEAM: confirm]**
+- **Parse failures:** CFG (after the cutoff) and PAYX did not parse after two
+  retries (§4). They are missing and are dropped by complete case.
+- **`guidance_revision = null`** (31 of 335 primary events; the call has
+  nothing to compare with): **[TEAM: choose]**
+  - proposed: keep §2's complete-case rule for the primary result
+    (304 primary events), and add a robustness row that codes null as 0
+    plus a `no_prior_guidance` indicator (335 events);
+  - alternative: make the indicator version primary.
+- **`guidance_specificity` barely varies:** 298 of 304 primary events
+  score 2 (`outputs/run3_feature_distribution.csv`). It stays in Run 3 as
+  pre-specified. Its coefficient rests on 6 events and is reported with
+  that caveat.
+- **Overlap with Runs 1–2** (Spearman, 304 events): no Run 3 variable has
+  a correlation above 0.31 in absolute value with EPS surprise or any Run 2
+  variable (`outputs/run3_feature_correlations.csv`). The LLM variables are
+  not re-measuring the Run 1–2 predictors.
+- **Sentiment gap** (management prepared-remarks sentiment minus
+  analyst-question sentiment): **[TEAM: choose]** add it to Run 2 now, or
+  report it only afterwards as exploratory. Run 2 already contains both
+  inputs, so in a linear model the gap adds nothing to Run 2's fit.
