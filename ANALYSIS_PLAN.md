@@ -50,12 +50,15 @@ Sentiment is intended to be dictionary-based. The scoring method will be documen
 
 ### Run 3: Run 2 plus AI-extracted measures
 
-We add two variables scored by a language model:
+We add five variables scored by a language model from the transcript only:
 
-- **Outlook tone:** how positive or negative management's forward-looking statements are
-- **Guidance specificity:** how concrete the guidance is
+- **Guidance specificity:** whether forward guidance is absent, qualitative, or numeric (scored 0 to 2)
+- **Guidance revision:** whether management raised, kept, or cut its prior guidance, as stated on the call (calls with no prior guidance are their own category)
+- **Q&A evasiveness:** how often management fails to directly answer analysts' questions (scored 0 to 2)
+- **One-off attribution:** whether management credits or blames the quarter's results on temporary, one-time factors (scored -1, 0, or +1)
+- **Analyst concern focus:** whether analysts' questions focus on a single problem the company has (scored 0 to 2)
 
-This run shows whether AI-based reading of the call adds predictive power beyond Runs 1 and 2.
+A word-count method cannot do this work: telling vague guidance from a specific dollar range, matching each answer to its question, and understanding what is being compared with what all require a language model. In the models, guidance revision enters as yes/no indicators for raised, lowered, and no prior guidance, with unchanged guidance as the comparison group. This run shows whether AI-based reading of the call adds predictive power beyond Runs 1 and 2.
 
 ## Method
 
