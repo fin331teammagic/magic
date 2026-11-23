@@ -103,6 +103,21 @@ IQ transcripts the course provided on 2026-11-19.
 - **Blocker:** our Claude Console login shows only a personal organization,
   so we have asked you how to get an API key under the enterprise account.
   No real transcript has been sent.
+- **Day-0 check** (Amendment 3, `7306976`; `docs/DAY0_TRANSCRIPT_CHECK.md`):
+  - 453 matched events have a call consistent with their `day0_session`.
+  - 21 have a cohort day 0 that is an earlier 8-K, 3–27 trading days
+    before the call. They are excluded from Runs 2–3 unless their CAR is
+    recomputed.
+  - In Run 1, this affects 1 primary event (PGR). It is disclosed.
+- **Run 2 is built; Run 3 is ready.**
+  - The five Run 2 dictionary variables are computed locally for all 474
+    matched calls from Capital IQ's speaker-tagged components
+    (`outputs/q2_2026_dictionary_features.csv`). Nothing was sent anywhere.
+  - `code/run_nested_models.py` (`6857eaf`) implements the full nested
+    comparison: block Wald tests, the week-block bootstrap of ΔMSE and the
+    shuffled-score placebo. Its tests use a planted effect.
+  - It runs as soon as the LLM scores exist. The expected common sample is
+    336 primary events.
 - **Prompt check:** prompt v2.0 has been checked, unchanged, on the 8-call
   synthetic validation set (runs 6–8):
   - Sonnet 5.5 agreed with 47 of 48 reference labels;
