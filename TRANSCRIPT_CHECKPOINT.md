@@ -327,6 +327,19 @@ pinned project environment.
    eval "$S --run --overwrite"     # all 395 (about $10 with Sonnet)
    ```
 
+   To confirm the route during the real run, start the scorer through
+   `code/trace_network_hosts.py`. It prints every host contacted:
+
+   ```bash
+   conda run -n edsl312 python code/trace_network_hosts.py code/score_transcripts_edsl.py <same args>
+   ```
+
+   **Check, 2026-11-23:** one invented validation call (SYN2-V01) was scored
+   with Haiku 5.5 through this wrapper. The only host contacted was
+   `api.anthropic.com`; there was no `expectedparrot.com` or other host.
+   The check logs lookups made through Python's socket module, which is how
+   EDSL and the Anthropic SDK connect.
+
 2. Run the pre-specified nested comparison. It evaluates the holdout once,
    so log it in `specs_tried.md` §8.
 
