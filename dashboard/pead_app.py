@@ -711,7 +711,38 @@ with tabs[4]:
         if metrics_ds.status == SYNTHETIC:
             synthetic_banner("The model comparison below")
         mt = metrics_ds.frame.set_index("model")
-        if not {"baseline", "with_language"}.issubset(mt.index):
+        if "baseline" in mt.index and "with_language" not in mt.index:
+            # Real Run 1 delivered before Runs 2-3 (specs_tried.md, amendment 1).
+            base = mt.loc["baseline"]
+            outcome = str(base.get("outcome", "car_0_1_pct"))
+            st.info(
+                "**Run 1 only (fundamentals).** The language runs (2 and 3) are not delivered yet, so there is no "
+                "language comparison. Outcome: `{}`. Training calls through {}; holdout from {}.".format(
+                    outcome, str(base.get("train_cutoff", ""))[:10], str(base.get("test_start", ""))[:10]),
+                icon="📌",
+            )
+            k = st.columns(4)
+            k[0].metric("Training / holdout events", "{} / {}".format(int(base["train_n"]), int(base["test_n"])),
+                        border=True)
+            k[1].metric("Holdout RMSE", "{:.2f} pp".format(base["rmse"]), border=True)
+            k[2].metric("Out-of-sample R²", "{:.3f}".format(base["out_of_sample_r2"]), border=True,
+                        help="Against the training-set mean. Below 0 means worse than predicting that mean.")
+            if "in_sample_r2" in mt.columns:
+                k[3].metric("In-sample R², Run 1", "{:.3f}".format(base["in_sample_r2"]),
+                            border=True, help="Clustered Wald p = {:.4f} that all five slopes are zero.".format(
+                                base["in_sample_wald_p"]))
+            if "mse_gain_ci_low" in mt.columns:
+                st.caption(
+                    "MSE gain over the training-mean forecast: {:.2f}, week-block bootstrap 95% interval "
+                    "[{:.2f}, {:.2f}] over {} holdout weeks (supplementary; see `specs_tried.md` §8).".format(
+                        base["mse_gain_vs_train_mean"], base["mse_gain_ci_low"], base["mse_gain_ci_high"],
+                        int(base["bootstrap_weeks"])))
+            if holdout_ds.available:
+                st.markdown("**Predicted vs. actual (holdout), Run 1**")
+                st.altair_chart(charts.predicted_vs_actual_chart(
+                    holdout_ds.frame, outcome_title="CAR[0,1] (%)" if outcome == "car_0_1_pct" else outcome),
+                    width="stretch")
+        elif not {"baseline", "with_language"}.issubset(mt.index):
             st.error("Metrics file must contain rows for models 'baseline' and 'with_language'.")
         else:
             base, lang = mt.loc["baseline"], mt.loc["with_language"]

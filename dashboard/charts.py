@@ -237,13 +237,13 @@ def metric_comparison_chart(metrics: pd.DataFrame) -> alt.Chart:
     )
 
 
-def predicted_vs_actual_chart(holdout: pd.DataFrame) -> alt.Chart:
+def predicted_vs_actual_chart(holdout: pd.DataFrame, outcome_title: str = "20-session return (%)") -> alt.Chart:
     long = holdout.melt(
         id_vars=["ticker", "actual"],
         value_vars=["baseline_prediction", "language_model_prediction"],
         var_name="model",
         value_name="predicted",
-    )
+    ).dropna(subset=["predicted"])
     long["model"] = long["model"].map(
         {"baseline_prediction": MODEL_NAMES["baseline"], "language_model_prediction": MODEL_NAMES["with_language"]}
     )
@@ -254,8 +254,8 @@ def predicted_vs_actual_chart(holdout: pd.DataFrame) -> alt.Chart:
     ).encode(x="a:Q", y="b:Q")
     domain = [MODEL_NAMES["baseline"], MODEL_NAMES["with_language"]]
     dots = alt.Chart(long).mark_point(size=90, filled=True, opacity=0.9, stroke="white", strokeWidth=1.5).encode(
-        x=alt.X("predicted:Q", title="Predicted 20-session return (%)"),
-        y=alt.Y("actual:Q", title="Actual 20-session return (%)"),
+        x=alt.X("predicted:Q", title="Predicted " + outcome_title),
+        y=alt.Y("actual:Q", title="Actual " + outcome_title),
         color=alt.Color("model:N", scale=alt.Scale(domain=domain, range=[BLUE, ORANGE]),
                         legend=alt.Legend(title=None, orient="top", labelLimit=320)),
         shape=alt.Shape("model:N", scale=alt.Scale(domain=domain, range=["circle", "triangle-up"]),

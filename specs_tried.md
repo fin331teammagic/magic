@@ -237,6 +237,35 @@ failed and discarded runs.
 | 1 | 2026-11-19 | Abby | — | — | Pre-specification drafted (this file) | — | No | — |
 | 2 | 2026-11-22 | Abby | — | — | Merged `abby/specs-tried` and `michelle-pins-and-specs`. This file supersedes Michelle's Nov 17 draft (`468ec02`). Amendments 1–2 below written; §1–7 frozen | — | No | — |
 | 3 | 2026-11-22 | Abby | synthetic v2.0 development set (12 invented calls) | rubric agreement | `claude-haiku-5-5`, effort low, prompt v2.0, `code/score_transcripts_edsl.py` | 12 | n/a (synthetic) | `outputs/synthetic_v2_development_haiku_scores.csv` |
+| 4 | 2026-11-22 | Abby | real cohort, `outputs/q2_2026_cohort.csv` @ `a6ef269`, primary sample | CAR[0,1] | Run 1 (Amendment 1), `code/run_models.py` @ `971e1a3` | 426 in-sample; 292 / 134 | **Yes, once** | `outputs/model_comparison_metrics.csv` (`baseline`), `holdout_predictions.csv`, `run1_coefficients.csv`, `run1_sample_flow.csv` |
+| 5 | 2026-11-22 | Abby | same, all events (robustness) | CAR[0,1] | same | 433 in-sample; 294 / 139 | **Yes, once** | `model_comparison_metrics.csv` (`baseline_all_events`), `run1_coefficients.csv` |
+
+**Runs 4–5 results.** These come from the same script execution. The script
+was tested only on invented data before this run.
+
+- **In-sample, primary sample:**
+  - R² is 0.036 and adjusted R² is 0.024.
+  - The clustered Wald test that all five slopes are zero gives p = 0.0005,
+    with 55 day-0 clusters.
+  - EPS surprise: +0.060 pp of CAR[0,1] per 1 pp of surprise (p = 0.027).
+  - 52-week price change: +0.0024 per pp (p = 0.022).
+  - Beta: −0.95 per unit (p = 0.016).
+  - Log market cap: −0.53 (p = 0.11).
+  - Price-to-book: +0.030 (p = 0.63).
+- **Holdout, primary sample:**
+  - The training set has day-0 dates through 2026-07-30; the holdout runs
+    from 2026-07-31.
+  - Out-of-sample R² is 0.004, RMSE 7.63 pp and MAE 5.44 pp.
+  - The MSE gain over the training-mean forecast has a supplementary
+    week-block 95% interval of [−2.76, 7.61]. It includes zero, so Run 1 is
+    not distinguishable from forecasting the mean.
+- **Disclosed limitation:** the holdout spans only **4 calendar weeks of
+  day 0**, so the week-block bootstrap resamples only 4 blocks and its
+  interval is coarse. The Run 2 vs 1 and Run 3 vs 2 intervals will share
+  this limitation.
+- **All events (robustness):** the estimates are nearly identical:
+  - in-sample R² 0.033 and Wald p = 0.0006;
+  - holdout out-of-sample R² 0.0005.
 
 ### Amendments
 

@@ -1,0 +1,16 @@
+sample,step,n
+primary,cohort events,499
+primary,primary_timing_sample == True,464
+primary,car_0_1_pct present,463
+primary,eps_surprise_pct present,463
+primary,log_market_cap present,459
+primary,price_to_book present,427
+primary,return_52w_pct present,426
+primary,beta_252d present,426
+all_events,cohort events,499
+all_events,car_0_1_pct present,492
+all_events,eps_surprise_pct present,470
+all_events,log_market_cap present,466
+all_events,price_to_book present,434
+all_events,return_52w_pct present,433
+all_events,beta_252d present,433
