@@ -3,11 +3,15 @@
 Team Magic. This responds to `audits/04_instructor_audit.md` (audited commit
 `a270551`).
 
-> **Status: DRAFT, 2026-11-22.** The fixes are on branch
-> `abby/llm-rubric-v2` and are **not yet merged to `main`**. Commit hashes
-> are on that branch. The team still needs to review and merge, deploy the
-> dashboard (B3), and get API access under the course's enterprise account
-> (B2).
+> **Status, updated 2026-11-23.** PR #17 was merged into `main` on
+> 2026-11-22 (merge commit `15a054c`), so the commits below are in `main`.
+> The repository has moved from `gum327/magic` to `fin331teammagic/magic`,
+> and the old links redirect.
+>
+> Still open:
+> - B3: the dashboard deploy is waiting on the organization approving
+>   Streamlit;
+> - Runs 2–3: waiting on API access under the course's enterprise account.
 
 ## Summary
 
@@ -15,8 +19,8 @@ Team Magic. This responds to `audits/04_instructor_audit.md` (audited commit
 |---|---|---|
 | B1 · No real-data results | **Fixed** for Run 1. Runs 2–3 are waiting on transcript scoring | `31df28b` |
 | B2 · Transcripts don't cover the cohort | **Fixed** by amendment, option (a). Scoring waits on API access | `971e1a3`, `d2164d9` |
-| B3 · No live dashboard URL | **Open.** A team member has to deploy | — |
-| B4 · Unmerged branches | **Fixed on the branch.** All three heads are in `abby/llm-rubric-v2`; merging to `main` is pending | `89237ef`, `ba726b7` |
+| B3 · No live dashboard URL | **In progress.** Deploy is set up; waiting on the org to allow Streamlit | — |
+| B4 · Unmerged branches | **Fixed.** `main` contains all three heads (`ebb0882`, `468ec02`, `3d463bc`) | `15a054c` |
 | B5 · README vs. plan outcome | **Fixed** | `a29a1e4` |
 | CP2 A4 · Versions not pinned; Yahoo drift | Pins **fixed**. Drift is **disclosed** and contained | `ba726b7`, `971e1a3` |
 | CP2 A5 · Forward-window off-by-one | **Fixed** | `5320e8d` |
@@ -124,24 +128,30 @@ IQ transcripts the course provided on 2026-11-19.
   - Haiku 5.5 agreed with 39 of 48, including one parse failure on the
     prompt-injection test call.
 
-## B3 · No live dashboard URL: open
+## B3 · No live dashboard URL: in progress
 
-This needs a team member's Streamlit Community Cloud account:
-- app file `dashboard/pead_app.py` on `main`;
-- Python 3.12, matching `.python-version` and the pinned `requirements.txt`.
+The repository now lives in the `fin331teammagic` organization, so a team
+member can deploy it with admin rights. The Streamlit app is configured:
+- app file `dashboard/pead_app.py`;
+- branch `main`;
+- Python 3.12, matching `.python-version` and the pinned
+  `requirements.txt`;
+- address `team-magic-pead.streamlit.app`.
 
-We will add the URL to the top of the README and to column G of the sheet.
+The new organization has GitHub's OAuth app restrictions turned on, so an
+organization owner has to approve Streamlit before the deploy can run. When
+it is live, the URL goes at the top of the README and in column G of the
+sheet.
 
-## B4 · Unmerged branches: fixed on the branch, merge pending
+## B4 · Unmerged branches: fixed
 
-`abby/llm-rubric-v2` now contains:
-- `abby/specs-tried` (`89237ef`);
-- `michelle-pins-and-specs` (`ba726b7`);
-- its own rubric and scorer work.
+PR #17 (merge commit `15a054c`) brought all three branch heads into `main`:
+- `abby/specs-tried` (`ebb0882`);
+- `michelle-pins-and-specs` (`468ec02`);
+- `abby/llm-rubric-v2`.
 
 There is one `specs_tried.md`: the Nov 19 version. Michelle's Nov 17 draft
-is superseded and noted in §8 (run 2). A pull request to `main` will bring
-in all three heads.
+is superseded and noted in §8 (run 2).
 
 ## B5 · Outcome mismatch: fixed
 
@@ -172,3 +182,9 @@ In `5320e8d`:
   reaction (`tests/test_pead_pipeline.py`).
 - As you noted, the old code gave the same numbers. The fix removes the
   dependence on returns being exactly one row shorter than prices.
+
+## Other suggestions in the audit
+
+- **The easy_es estimation window** (164 rather than 255 sessions) is added
+  as a pre-specified robustness row in `specs_tried.md` Amendment 4. It has
+  not been run yet.
