@@ -239,10 +239,10 @@ failed and discarded runs.
 | 3 | 2026-11-22 | Abby | synthetic v2.0 development set (12 invented calls) | rubric agreement | `claude-haiku-5-5`, effort low, prompt v2.0, `code/score_transcripts_edsl.py` | 12 | n/a (synthetic) | `outputs/synthetic_v2_development_haiku_scores.csv` |
 | 4 | 2026-11-22 | Abby | real cohort, `outputs/q2_2026_cohort.csv` @ `a6ef269`, primary sample | CAR[0,1] | Run 1 (Amendment 1), `code/run_models.py` @ `971e1a3` | 426 in-sample; 292 / 134 | **Yes, once** | `outputs/model_comparison_metrics.csv` (`baseline`), `holdout_predictions.csv`, `run1_coefficients.csv`, `run1_sample_flow.csv` |
 | 5 | 2026-11-22 | Abby | same, all events (robustness) | CAR[0,1] | same | 433 in-sample; 294 / 139 | **Yes, once** | `model_comparison_metrics.csv` (`baseline_all_events`), `run1_coefficients.csv` |
-
 | 6 | 2026-11-22 | Abby | synthetic v2.0 development set | rubric agreement | `claude-sonnet-5-5`, effort low, prompt v2.0 | 12 | n/a (synthetic) | `outputs/synthetic_v2_development_sonnet_scores.csv` |
 | 7 | 2026-11-22 | Abby | synthetic v2.0 validation set (8 invented calls), prompt unchanged | rubric agreement | `claude-haiku-5-5`, effort low, prompt v2.0 | 8 | n/a (synthetic) | `outputs/synthetic_v2_validation_haiku_scores.csv` |
 | 8 | 2026-11-22 | Abby | same | rubric agreement | `claude-sonnet-5-5`, effort low, prompt v2.0 | 8 | n/a (synthetic) | `outputs/synthetic_v2_validation_sonnet_scores.csv` |
+| 9 | 2026-11-22 | Abby | 474 matched real calls (local only; nothing sent) | — | Run 2 dictionary features, `code/build_dictionary_features.py` (Amendment 3). Feature build only, no model fit | 474 | No | `outputs/q2_2026_dictionary_features.csv` |
 
 **Runs 3 and 6–8: rubric checks on invented calls.** Each cell is the number
 of labels agreeing with the reference, summed over the five variables plus
@@ -349,3 +349,37 @@ Written before any Run 2 or Run 3 result.
   API access is confirmed.
 - **Rubric check:** before any real call is scored, prompt v2.0 runs
   unchanged on the 8-call synthetic validation set (§4).
+
+**Amendment 3 · 2026-11-22 · Abby · day-0 check and Run 2 features.**
+Written before any Run 2 or Run 3 model fit.
+
+- **Day-0 check** (`docs/DAY0_TRANSCRIPT_CHECK.md`,
+  `outputs/q2_2026_day0_transcript_check.csv`):
+  - 453 matched events have a call consistent with `day0_session`.
+  - 21 events have a cohort day 0 before the call, 3–27 trading days early,
+    because their timestamp is an earlier 8-K.
+  - The 21 are excluded from the Run 2–3 sample and the nested Run 1 refit,
+    unless their CAR[0,1] is recomputed at the release that goes with the
+    call before Runs 2–3 are scored.
+  - Runs 4–5 are not rerun. They include PGR, 1 of 426 primary events, and
+    all 21 events in the all-events run, each with the wrong day 0. This is a
+    disclosed limitation.
+- **Run 2 feature source:**
+  - The five §4 Run 2 variables are computed from the Capital IQ
+    speaker-tagged components (`code/build_dictionary_features.py`), not by
+    parsing speaker labels in the text:
+    - prepared remarks: Executives' Presenter Speech;
+    - analyst questions: Analysts' Questions;
+    - tokens and dictionary flags as in `code/extract_transcript_features.py`.
+  - `congratulations_mentioned` follows §4: an analyst question contains
+    "congratulations" or "congrats". The older extractor matched
+    "congratulations" anywhere in the call.
+  - Dictionary: Loughran–McDonald 1993–2025, downloaded 2026-11-22 from the
+    SRAF link. SHA-256 `e2d13286…`, the same file as the synthetic
+    checkpoint. It is kept in git-ignored `restricted_data/reference/`.
+- **Expected common sample:** before LLM missingness, 336 primary events
+  (341 all events). The steps:
+  1. Run 1 complete: 426 primary events.
+  2. Call after the cutoff: 341.
+  3. Day 0 consistent: 340.
+  4. Run 2 complete: 336.
