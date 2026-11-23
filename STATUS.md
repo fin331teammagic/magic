@@ -126,6 +126,18 @@ at Low effort and returned the expected scores. The web interface did not
 expose a maximum-token setting, and strict JSON parseability remains
 unverified for the single-transcript JSON prompt.
 
+**Update, 2026-11-22.** On 2026-11-19 Professor Bowen gave new instructions
+for the course's S&P Capital IQ transcripts (2024–2026).
+- **What changed:** they may be scored with Claude by running EDSL on a team
+  member's own computer, with remote inference and the remote cache
+  disabled. The text then goes straight to Anthropic's API under the
+  course's enterprise account, never to Expected Parrot's servers.
+- **What still holds:** transcript text is still never committed to GitHub
+  or pasted into a web chat.
+- **Before any real transcript is sent:** API access under the enterprise
+  account must be confirmed. Until then no real transcript has been sent.
+- **Details:** `TRANSCRIPT_CHECKPOINT.md` and `specs_tried.md` amendment 2.
+
 Twenty expanded synthetic mini-calls were batch-scored with Claude Haiku 5.5
 at Low effort, using prompt version 1.2. All 20 matched the reference labels
 after the rubric was clarified and two labels were corrected; because the same
