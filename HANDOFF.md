@@ -1,8 +1,10 @@
 # Team Magic: who does what until Dec 1
 
-Updated 2026-11-22 by Abby. The work is in
-[PR #17](https://github.com/gum327/magic/pull/17). The audit response draft
-is in `audits/05_audit_response.md`.
+Updated 2026-11-23 by Abby.
+
+- The repo is now `fin331teammagic/magic`; old `gum327` links redirect.
+- PR #17 (the audit fixes) is merged into `main`.
+- The audit response is in `audits/05_audit_response.md`.
 
 ## Where we are
 
@@ -14,21 +16,18 @@ is in `audits/05_audit_response.md`.
 | Run 2 dictionary features | Built (local, no text committed) | `outputs/q2_2026_dictionary_features.csv` |
 | Run 3 LLM scores | **Blocked:** needs an enterprise API key (Abby asked Prof. Bowen) | `TRANSCRIPT_CHECKPOINT.md`, bottom |
 | Runs 1–3 comparison | Code ready, tested on invented data; runs once the scores exist | `code/run_nested_models.py` |
-| Live dashboard (audit B3) | **Blocked:** Streamlit needs admin rights on the repo | see Gus below |
+| Live dashboard (audit B3) | **Blocked:** the org must allow Streamlit (OAuth app restriction) | see Gus below |
 | Day-0 mismatches (21 events) | Found and excluded from Runs 2–3 | `docs/DAY0_TRANSCRIPT_CHECK.md` |
 
 ## Gus
 
-1. **Dashboard.** Do one of these:
-   - make Abby an admin: repo **Settings → Collaborators → abbyfischler → Admin**;
-   - or deploy the app yourself at share.streamlit.io, with:
-     - repo `gum327/magic`;
-     - branch `main`, after PR #17 is merged;
-     - file `dashboard/pead_app.py`;
-     - **Advanced settings → Python 3.12**.
-
-   Put the link in column G of the Team Projects sheet and at the top of
-   `README.md`.
+1. **Dashboard: allow Streamlit in the org.** Abby has repo admin and the
+   app is set up (`team-magic-pead.streamlit.app`). The org blocks outside
+   apps, so go to
+   github.com/organizations/fin331teammagic/settings/oauth_application_policy
+   → **Streamlit** → **Grant**, or click **Remove restrictions**.
+   Alternatively, make Abby an org **Owner** (People → Invite member), and
+   she can do it herself.
 2. **Day-0 fix (optional, but it adds events).** For the 21 events in
    `docs/DAY0_TRANSCRIPT_CHECK.md`, the cohort timestamp is an earlier 8-K.
    - Find the 8-K that carries the quarterly earnings release. It is
@@ -61,7 +60,7 @@ amendment in `specs_tried.md` §8:
 
 ## Michelle
 
-1. **Review and merge PR #17.**
+1. **Look over what PR #17 merged.**
    - Abby's `specs_tried.md` (Nov 19) replaced the Nov 17 draft, because
      the audit asked for one copy.
    - Your version pins are merged.
@@ -96,6 +95,6 @@ amendment in `specs_tried.md` §8:
 
 | By | What |
 |---|---|
-| Tue Nov 24 | Cammy's decisions; Michelle merges PR #17; Gus sorts out the dashboard access |
+| Tue Nov 24 | Cammy's decisions; Gus allows Streamlit in the org |
 | Before Thanksgiving | Scores and Runs 1–3, if the API key arrives |
 | Mon Dec 1 | Presentation from the live URL (9–10 minutes) |

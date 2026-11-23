@@ -383,3 +383,18 @@ Written before any Run 2 or Run 3 model fit.
   2. Call after the cutoff: 341.
   3. Day 0 consistent: 340.
   4. Run 2 complete: 336.
+
+**Amendment 4 · 2026-11-23 · Abby · estimation-window robustness (audit CP3).**
+Adds one robustness row to §6. It does not change the primary analysis.
+
+- **Why:** easy_es expands each event by calendar days, so `estimation_nobs`
+  is about 164 trading sessions (median 163), not the nominal 255
+  (`docs/GUS_DATA_DICTIONARY.md:78-79`). The auditor's recomputation of 12
+  events with a true 255-session window moved CAR[0,1] by at most 1.03 pp
+  (HPE 16.89 → 17.91).
+- **Robustness row:** recompute CAR[0,1] with a 255-trading-session
+  estimation window, using the same Fama–French five factors and gap, and
+  rerun Runs 1–3 on that outcome.
+- **Labeling:** results are reported as robustness, next to the primary
+  table. The primary outcome stays easy_es `car_0_1_pct`.
+- **Status:** not yet run.
