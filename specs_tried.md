@@ -9,7 +9,7 @@ the pre-specification. Once the first real-data run is logged, they are not
 edited. Any later change is added as a dated amendment in Section 8, and
 results produced after a change are labeled as not pre-specified.
 
-> **Status:** DRAFT, 2026-11-19. No model has been fit on real data. The only
+> **Status:** FROZEN 2026-11-22 (Amendment 1). Drafted 2026-11-19. No model had been fit on real data when it was frozen. The only
 > runs in `outputs/` use the synthetic 500-call fixture
 > (`data_status = synthetic`). Items marked **[TEAM]** need a team decision
 > before this section is frozen.
@@ -235,7 +235,66 @@ failed and discarded runs.
 |---|---|---|---|---|---|---|---|---|
 | 0 | 2026-11-14 | Michelle | synthetic 500-call fixture | CAR[0,1] | `ANALYSIS_PLAN.md` Runs 1–3 (earlier variable list) | 208 / 148 | synthetic only, not study data | `outputs/synthetic_model_runs.csv` |
 | 1 | 2026-11-19 | Abby | — | — | Pre-specification drafted (this file) | — | No | — |
+| 2 | 2026-11-22 | Abby | — | — | Merged `abby/specs-tried` and `michelle-pins-and-specs`. This file supersedes Michelle's Nov 17 draft (`468ec02`). Amendments 1–2 below written; §1–7 frozen | — | No | — |
+| 3 | 2026-11-22 | Abby | synthetic v2.0 development set (12 invented calls) | rubric agreement | `claude-haiku-5-5`, effort low, prompt v2.0, `code/score_transcripts_edsl.py` | 12 | n/a (synthetic) | `outputs/synthetic_v2_development_haiku_scores.csv` |
 
 ### Amendments
 
-None yet.
+**Amendment 1 · 2026-11-22 · Abby · written before any real-data model fit.**
+Freezes §1–7 for Run 1 and settles the [TEAM] items that Run 1 needs.
+
+- **Minimum size:** the proposed rule is adopted. Fewer than 50
+  complete-case events means the results are exploratory.
+- **Winsorizing:** the proposed rule is adopted. `eps_surprise_pct` and
+  `price_to_book` are winsorized at the 1st and 99th percentiles of the
+  estimation sample: the full complete-case sample in-sample, and the
+  training set for the holdout, with the training bounds applied to the
+  holdout. No other variable is winsorized, including `return_52w_pct`.
+- **Column mapping (§4 → `outputs/q2_2026_cohort.csv`):**
+  - `price_change_52w_pct` → `return_52w_pct`.
+  - `beta` → `beta_252d`. §4 says "from Yahoo", but the cohort's beta is
+    rebuilt from 252 sessions of daily stock and SPY returns ending on day −1
+    (`docs/GUS_DATA_DICTIONARY.md:113`). That is a point-in-time measure,
+    which Yahoo's snapshot is not, so we use it.
+- **Run 1 now, nested comparison later:** Runs 2–3 are not available yet.
+  1. Run 1 is fit and its holdout evaluated now, on the Run 1 complete-case
+     sample. Primary: `primary_timing_sample == True`. Robustness: all events.
+  2. When Runs 2–3 exist, all three runs are refit on their common
+     complete-case sample, as in §2, and evaluated on that sample's holdout.
+     That refit gives the nested comparison.
+  3. Both sets of Run 1 numbers are reported, each labeled with its sample.
+- **Run 1 inference (supplementary):** §5's ΔMSE is defined only between
+  runs. For Run 1 alone we also report the week-block bootstrap interval
+  (2,000 draws, seed 331) of the MSE gain over the training-mean forecast.
+  This is labeled supplementary, not pre-specified.
+- **Input file:** `outputs/q2_2026_cohort.csv` as committed in `a6ef269`
+  (2026-11-17). It is not rebuilt, because live Yahoo pulls drift (audit A4).
+- **Still open, not needed for Run 1:**
+  - the Run 3 model choice (Sonnet 5.5 proposed);
+  - the ridge robustness check;
+  - the Run 3 variable list sign-off.
+
+**Amendment 2 · 2026-11-22 · Abby · transcript coverage (audit CP3 B2).**
+Written before any Run 2 or Run 3 result.
+
+- **Source:** option (a) of the audit. On 2026-11-19 the course lead provided
+  S&P Capital IQ transcripts through 2026, kept locally in git-ignored
+  `restricted_data/`.
+  - `code/build_transcript_inputs.py` matches 474 of the 499 cohort events
+    to a live earnings call (commit `d2164d9`; coverage in
+    `TRANSCRIPT_CHECKPOINT.md`).
+  - 21 events were matched by fiscal-period end, because their cohort
+    earnings date is an earlier 8-K. Their `day0_session` is checked before
+    Runs 2–3.
+- **Leakage:** Anthropic publishes a June 2026 training-data cutoff for
+  Claude Haiku, Sonnet and Opus 5.5 (models overview, checked 2026-11-19).
+  The Run 2–3 sample, and therefore the nested Run 1 refit, is limited to
+  calls held after 2026-06-30: 395 of the 474 matched calls. §2's
+  "same sample in every run" rule applies to this restricted sample.
+- **Route:** transcript text goes only from a team member's own computer,
+  through EDSL with remote inference and the remote cache disabled, to
+  Anthropic's API under the course's enterprise account, as the course lead
+  directed on 2026-11-19. No real transcript is sent until that account's
+  API access is confirmed.
+- **Rubric check:** before any real call is scored, prompt v2.0 runs
+  unchanged on the 8-call synthetic validation set (§4).
