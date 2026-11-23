@@ -1,0 +1,10 @@
+# Streamlit Community Cloud reads this file first, because it sits next to
+# the entry point (dashboard/pead_app.py). The dashboard only reads CSVs in
+# outputs/, so it needs just these four packages. They are tested together on
+# Python 3.14.10 (2026-11-23, Streamlit AppTest: all 7 tabs load with no
+# exceptions). The research pipeline keeps its own Python 3.12 pins in the
+# root requirements.txt, which easy_es needs.
+streamlit==1.67.0
+pandas==2.3.3
+numpy==2.5.5
+altair==6.3.0
