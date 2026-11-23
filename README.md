@@ -3,9 +3,21 @@
 ## Project question
 
 For S&P 500 companies reporting fiscal quarters that ended in calendar Q2
-2026, do pre-specified signals from earnings-call language improve
-chronological holdout prediction of 20-trading-session factor-proxy-adjusted
-returns beyond EPS surprise and the announcement reaction?
+2026, do variables measured from the earnings call, first with standard
+dictionary text analysis and then with an LLM, explain and predict the
+abnormal return around the call (CAR[0,1], Fama–French five-factor) beyond
+standard fundamental predictors? The design is fixed in
+[`specs_tried.md`](specs_tried.md): three nested OLS runs on the same events,
+with a chronological holdout evaluated once.
+
+**Current result (Run 1, fundamentals only, 2026-11-22):**
+- In-sample R² is 0.036 on 426 primary-sample events (clustered Wald
+  p = 0.0005).
+- Holdout out-of-sample R² is 0.004, which is not distinguishable from
+  forecasting the mean.
+- Files: [`outputs/model_comparison_metrics.csv`](outputs/model_comparison_metrics.csv)
+  and [`outputs/run1_coefficients.csv`](outputs/run1_coefficients.csv).
+- Runs 2–3 need the real transcripts scored (see `specs_tried.md` §8).
 
 Post-earnings announcement drift (PEAD) is established in prior research, so
 the project is not premised on rediscovering that positive surprises predict
@@ -24,23 +36,35 @@ earnings data.
 - **Earnings cohort:** Fiscal-quarter end dates from April 1 through June 30,
   2026, with the corresponding earnings calls and announcements. Record both
   the fiscal period end and public announcement timestamp.
-- **Primary outcome:** Cumulative abnormal return over the 20 full trading
+- **Primary outcome:** `car_0_1_pct`, the cumulative abnormal return over the
+  call's day 0 and day 1 (easy_es 0.1.8, official Fama–French five daily
+  factors), as in `ANALYSIS_PLAN.md` and `specs_tried.md` §3.
+- **Secondary outcome:** Cumulative abnormal return over the 20 full trading
   sessions after the announcement-reaction session, estimated with three
-  ETF-based factor proxies. Keep the announcement reaction separate from
-  those forward sessions. The pipeline now computes these proxies for the
-  four-company pilot; that convenience sample is still not the target study.
+  ETF-based factor proxies (not French factors). The announcement reaction
+  is kept separate from those forward sessions. The pipeline computes these
+  proxies for the four-company pilot only; they are not yet built for the
+  cohort.
 - **Later outcomes:** Report 5- and 60-session estimates as secondary results
   when complete forward windows are available. Do not treat not-yet-observed
   returns as zero or silently drop them.
-- **Transcript/AI extension:** Compare a surprise-and-reaction baseline with
-  a model adding pre-specified call-language scores. The proposed scoring
-  checkpoint is `gpt-5.2-2025-12-11`, published before the cohort; its
-  [official documentation](https://developers.openai.com/api/docs/models/gpt-5.2)
-  lists an August 31, 2025 knowledge cutoff. Use this pinned snapshot, not a
-  floating alias, and verify provider availability and transcript/API terms
-  before use. A 10–20-call audit is only a feasibility check, not enough by
-  itself to support the predictive comparison. Include the extension only if
-  rights and adequate coverage are verified.
+- **Transcript/AI extension:** The current pre-specification is
+  `specs_tried.md`. It uses three nested regressions (fundamentals, then
+  dictionary text measures, then five LLM-measured variables). The LLM
+  variables are scored with Claude through Expected Parrot's EDSL library,
+  run locally (`code/score_transcripts_edsl.py`, prompt
+  `prompts/transcript_llm_scores_v2.0.txt`). This replaces the earlier
+  `gpt-5.2-2025-12-11` proposal. Record the chosen Claude model's published
+  knowledge cutoff in `specs_tried.md`. A cutoff before the calls does not
+  prove the events are absent from training. Score real transcripts only
+  after transcript rights and the course lead's written approval are
+  confirmed. Transcripts come from the course's S&P Capital IQ files
+  (2024-01-05 to 2026-08-07, git-ignored in `restricted_data/`);
+  `code/build_transcript_inputs.py` matches 474 of the 499 cohort events to a
+  call. All current Claude models list a June 2026 training cutoff, so 79 of
+  those calls fall inside the training window. Coverage, the 21 events whose
+  cohort earnings date does not match the call, and the approval steps are in
+  `TRANSCRIPT_CHECKPOINT.md`.
 
 ### Prediction test
 
@@ -290,10 +314,16 @@ IDs do not match real events; no real transcript-feature merge is available.
 
 ## Run the pilot
 
-Run commands from the repository root:
+Run commands from the repository root with **Python 3.12** (`.python-version`).
+`easy_es` requires pandas < 2.3, which crashes on Python 3.14. Versions are
+pinned in `requirements.txt`; `requirements-lock.txt` pins the full tested
+environment for reproducible reruns.
 
 ```bash
-pip install -r requirements.txt
+# one-time setup with uv (https://docs.astral.sh/uv/)
+uv venv --python 3.12 .venv && source .venv/bin/activate
+uv pip install -r requirements-lock.txt
+# without uv: python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements-lock.txt
 python code/pead_pipeline.py --as-of 2026-11-06
 python code/build_synthetic_checkpoint.py
 python code/extract_transcript_features.py \

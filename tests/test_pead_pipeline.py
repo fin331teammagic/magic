@@ -120,6 +120,41 @@ class FactorProxyReturnTests(unittest.TestCase):
         self.assertAlmostEqual(result[5], 0.3, places=6)
         self.assertEqual(result["factor_proxy_estimation_nobs"], 252)
 
+    def test_forward_window_starts_one_session_after_reaction_by_date(self):
+        # Audit CP2 A5: the window must start exactly one session after the
+        # reaction (1-session horizon = that session alone), including when
+        # an ETF price is missing early in the history.
+        event_position = 270
+        self.residuals[event_position + 1] = 0.02
+        self.residuals[event_position + 2 : event_position + 7] = [
+            0.001, -0.002, 0.003, -0.001, 0.002,
+        ]
+        self.residuals[event_position + 7] = 0.5  # outside a correct window
+        stock_returns = (
+            self.prices["stock"].pct_change().fillna(0).to_numpy()
+            + self.residuals
+        )
+        self.prices["stock"] = pd.Series(
+            100 * np.cumprod(1 + stock_returns), index=self.dates
+        )
+        factor_prices = dict(self.factor_prices)
+        factor_prices["BIL"] = factor_prices["BIL"].copy()
+        factor_prices["BIL"].iloc[5] = np.nan
+
+        result = calculate_factor_proxy_returns(
+            self.prices["stock"],
+            factor_prices,
+            pd.Timestamp(self.dates[event_position], tz="America/New_York")
+            + pd.Timedelta(hours=16),
+            horizons=(1, 5),
+        )
+
+        self.assertAlmostEqual(
+            result["factor_proxy_announcement_abnormal_return_pct"], 2.0, places=6
+        )
+        self.assertAlmostEqual(result[1], 0.1, places=6)
+        self.assertAlmostEqual(result[5], 0.3, places=6)
+
     def test_forward_horizon_is_missing_until_fully_observed(self):
         result = calculate_factor_proxy_returns(
             self.prices["stock"],

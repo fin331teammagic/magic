@@ -22,3 +22,6 @@ Thumbs.db
 
 # Raw source downloads (Yahoo, SEC, French) cached by code/gus_collect.py
 data/raw/
+
+# Real-transcript LLM scores and raw model text (licensed source)
+/outputs/llm_scores_real/

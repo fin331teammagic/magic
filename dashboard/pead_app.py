@@ -212,14 +212,14 @@ with tabs[0]:
         ("1 · Sample", "One observation = one company's quarterly earnings announcement. "
          "Universe: the S&P 500 list as of **June 30, 2026**, for fiscal quarters ending "
          "April 1 – June 30, 2026."),
-        ("2 · Outcome", "The **abnormal return** over the 20 trading sessions *after* the "
-         "announcement-day reaction, i.e. the return not explained by market, size and value "
-         "moves (measured with ETF proxies)."),
-        ("3 · Baseline model", "Predict that outcome from what is already known: the **EPS "
-         "surprise** and the **announcement-day reaction**. This captures classic "
-         "post-earnings drift."),
-        ("4 · Language test", "Add pre-specified **earnings-call language scores**. Fit on the "
-         "earliest 60% of events, test once on the latest 40%. Does prediction error fall?"),
+        ("2 · Outcome", "**CAR[0,1]**: the abnormal return on the call's day 0 and day 1, i.e. "
+         "the return not explained by the Fama–French five factors. The 20-session drift after "
+         "the reaction is a secondary outcome."),
+        ("3 · Run 1: fundamentals", "Explain and predict that outcome from what is known before "
+         "the call: **EPS surprise**, size, price-to-book, 52-week momentum and beta."),
+        ("4 · Runs 2–3: language", "Add **dictionary text measures** (Run 2), then "
+         "**LLM-measured variables** (Run 3). Fit on the earliest 60% of events, test once on "
+         "the latest 40%. Does each layer add anything?"),
     ]
     for col, (head, body) in zip(steps, step_text):
         with col.container(border=True, height="stretch"):
@@ -274,16 +274,16 @@ with results_tab:
     coefs_ds, preds_ds, vars_ds = data["model_coefficients"], data["run_predictions"], data["variables"]
     st.subheader("Does earnings-call language explain the stock's reaction?")
     st.markdown(
-        "**Checkpoint outcome: CAR[0,1]**, the cumulative abnormal return on the call day and the next "
-        "trading day. This is distinct from the project's **final outcome**, the abnormal return over the 20 "
-        "trading sessions after the reaction session, which the full study will use."
+        "**Primary outcome: CAR[0,1]**, the cumulative abnormal return on the call day and the next "
+        "trading day (`specs_tried.md` §3). The abnormal return over the 20 trading sessions after the "
+        "reaction session is a secondary outcome."
     )
     if cohort.available and "car_0_1_pct" in cohort.frame.columns:
         st.info(
             "**Real data is in:** {:,} Q2 2026 events with CAR[0,1] and the Run 1 Yahoo variables "
-            "(see *Event explorer*). The model runs below stay **synthetic on purpose**: per the instructor "
-            "audit (A2), `specs_tried.md` must fix the models, split and inference method *before* the real "
-            "holdout is evaluated.".format(int(cohort.frame["car_0_1_pct"].notna().sum())),
+            "(see *Event explorer*). **Real Run 1** (fundamentals) results are on the *Findings* tab. The "
+            "three-run layout below stays **synthetic** until Runs 2–3 are scored on real transcripts "
+            "(`specs_tried.md` §8).".format(int(cohort.frame["car_0_1_pct"].notna().sum())),
             icon="📌",
         )
     if not (final_ds.available and runs_ds.available):
@@ -711,7 +711,38 @@ with tabs[4]:
         if metrics_ds.status == SYNTHETIC:
             synthetic_banner("The model comparison below")
         mt = metrics_ds.frame.set_index("model")
-        if not {"baseline", "with_language"}.issubset(mt.index):
+        if "baseline" in mt.index and "with_language" not in mt.index:
+            # Real Run 1 delivered before Runs 2-3 (specs_tried.md, amendment 1).
+            base = mt.loc["baseline"]
+            outcome = str(base.get("outcome", "car_0_1_pct"))
+            st.info(
+                "**Run 1 only (fundamentals).** The language runs (2 and 3) are not delivered yet, so there is no "
+                "language comparison. Outcome: `{}`. Training calls through {}; holdout from {}.".format(
+                    outcome, str(base.get("train_cutoff", ""))[:10], str(base.get("test_start", ""))[:10]),
+                icon="📌",
+            )
+            k = st.columns(4)
+            k[0].metric("Training / holdout events", "{} / {}".format(int(base["train_n"]), int(base["test_n"])),
+                        border=True)
+            k[1].metric("Holdout RMSE", "{:.2f} pp".format(base["rmse"]), border=True)
+            k[2].metric("Out-of-sample R²", "{:.3f}".format(base["out_of_sample_r2"]), border=True,
+                        help="Against the training-set mean. Below 0 means worse than predicting that mean.")
+            if "in_sample_r2" in mt.columns:
+                k[3].metric("In-sample R², Run 1", "{:.3f}".format(base["in_sample_r2"]),
+                            border=True, help="Clustered Wald p = {:.4f} that all five slopes are zero.".format(
+                                base["in_sample_wald_p"]))
+            if "mse_gain_ci_low" in mt.columns:
+                st.caption(
+                    "MSE gain over the training-mean forecast: {:.2f}, week-block bootstrap 95% interval "
+                    "[{:.2f}, {:.2f}] over {} holdout weeks (supplementary; see `specs_tried.md` §8).".format(
+                        base["mse_gain_vs_train_mean"], base["mse_gain_ci_low"], base["mse_gain_ci_high"],
+                        int(base["bootstrap_weeks"])))
+            if holdout_ds.available:
+                st.markdown("**Predicted vs. actual (holdout), Run 1**")
+                st.altair_chart(charts.predicted_vs_actual_chart(
+                    holdout_ds.frame, outcome_title="CAR[0,1] (%)" if outcome == "car_0_1_pct" else outcome),
+                    width="stretch")
+        elif not {"baseline", "with_language"}.issubset(mt.index):
             st.error("Metrics file must contain rows for models 'baseline' and 'with_language'.")
         else:
             base, lang = mt.loc["baseline"], mt.loc["with_language"]

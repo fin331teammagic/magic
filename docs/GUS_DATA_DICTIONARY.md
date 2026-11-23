@@ -128,7 +128,7 @@ days; the share-count series is assumed to be as reported.
 ## Rebuild
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-lock.txt   # Python 3.12; see README "Run the pilot"
 export SEC_USER_AGENT="Name contact-email"     # SEC fair-access requirement
 python code/gus_collect.py manifest  --as-of 2026-11-13
 python code/gus_collect.py event-study --as-of 2026-11-13

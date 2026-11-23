@@ -242,10 +242,11 @@ def calculate_factor_proxy_returns(
             residuals.loc[event_session] * 100
         ),
     }
+    # Slice by date, not by position: residuals are indexed by returns, which
+    # can have fewer rows than common_prices (audit CP2 A5).
+    forward_residuals = residuals.loc[residuals.index > event_session]
     for horizon in horizons:
-        start = event_position
-        end = start + horizon
-        horizon_residuals = residuals.iloc[start:end]
+        horizon_residuals = forward_residuals.iloc[:horizon]
         result[horizon] = (
             horizon_residuals.sum() * 100
             if len(horizon_residuals) == horizon

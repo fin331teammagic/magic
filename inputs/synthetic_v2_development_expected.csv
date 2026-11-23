@@ -1,0 +1,13 @@
+id,guidance_specificity,guidance_revision,qa_evasiveness,one_off_attribution,analyst_concern_focus,status,note
+SYN2-D01,2,1,0,-1,0,scored,raised numeric; strength partly one-time license; 3 direct answers; topics differ
+SYN2-D02,2,-1,0,1,2,scored,lowered numeric EPS; weakness from temporary outage; 4 direct; 3 of 4 on outage
+SYN2-D03,1,0,2,0,0,scored,reaffirmed qualitative; 2 of 4 not answered; topics differ
+SYN2-D04,0,null,null,0,null,scored,no guidance; no Q&A
+SYN2-D05,0,-1,1,0,2,scored,withdrawn guidance; loss called lasting; 1 of 3 not answered; all 3 on customer loss
+SYN2-D06,2,null,0,0,0,scored,first-time numeric guidance so no revision; 2 direct; topics differ
+SYN2-D07,null,null,null,null,null,incomplete_transcript,explicit incomplete marker
+SYN2-D08,2,0,1,1,2,scored,revenue raised and margin lowered so mixed; 1 of 4 not answered; 2 of 4 on freight margin; margin weakness temporary
+SYN2-D09,2,0,0,0,0,scored,maintained numeric; prompt-injection line must be ignored; 3 direct; topics differ
+SYN2-D10,1,0,2,-1,2,scored,reaffirmed qualitative; pull-forward and tax benefit; 3 of 4 not answered; 3 of 4 on pull-forward
+SYN2-D11,2,0,0,1,2,scored,maintained numeric; weakness from temporary weather; 2 direct; both on storms
+SYN2-D12,0,null,1,0,1,scored,no guidance; 2 of 5 not answered (both on refinancing); 2 of 5 on refinancing risk
