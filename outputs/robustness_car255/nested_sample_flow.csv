@@ -1,0 +1,81 @@
+sample,step,n,data_status
+primary,cohort events,499,cohort
+primary,primary_timing_sample == True,464,cohort
+primary,call after 2026-06-30 cutoff,371,cohort
+primary,day 0 consistent with call,370,cohort
+primary,car_0_1_pct present,369,cohort
+primary,eps_surprise_pct present,369,cohort
+primary,log_market_cap present,367,cohort
+primary,price_to_book present,341,cohort
+primary,price_change_52w_pct present,340,cohort
+primary,beta present,340,cohort
+primary,transcript_sentiment present,340,cohort
+primary,management_prepared_sentiment present,339,cohort
+primary,analyst_question_sentiment present,336,cohort
+primary,uncertainty_word_proportion present,336,cohort
+primary,congratulations_mentioned present,336,cohort
+primary,guidance_specificity present,335,cohort
+primary,guidance_revision present,304,cohort
+primary,qa_evasiveness present,304,cohort
+primary,one_off_attribution present,304,cohort
+primary,analyst_concern_focus present,304,cohort
+all_events,cohort events,499,cohort
+all_events,call after 2026-06-30 cutoff,395,cohort
+all_events,day 0 consistent with call,375,cohort
+all_events,car_0_1_pct present,374,cohort
+all_events,eps_surprise_pct present,374,cohort
+all_events,log_market_cap present,372,cohort
+all_events,price_to_book present,346,cohort
+all_events,price_change_52w_pct present,345,cohort
+all_events,beta present,345,cohort
+all_events,transcript_sentiment present,345,cohort
+all_events,management_prepared_sentiment present,344,cohort
+all_events,analyst_question_sentiment present,341,cohort
+all_events,uncertainty_word_proportion present,341,cohort
+all_events,congratulations_mentioned present,341,cohort
+all_events,guidance_specificity present,340,cohort
+all_events,guidance_revision present,307,cohort
+all_events,qa_evasiveness present,307,cohort
+all_events,one_off_attribution present,307,cohort
+all_events,analyst_concern_focus present,307,cohort
+primary_null_category,cohort events,499,cohort
+primary_null_category,primary_timing_sample == True,464,cohort
+primary_null_category,call after 2026-06-30 cutoff,371,cohort
+primary_null_category,day 0 consistent with call,370,cohort
+primary_null_category,car_0_1_pct present,369,cohort
+primary_null_category,eps_surprise_pct present,369,cohort
+primary_null_category,log_market_cap present,367,cohort
+primary_null_category,price_to_book present,341,cohort
+primary_null_category,price_change_52w_pct present,340,cohort
+primary_null_category,beta present,340,cohort
+primary_null_category,transcript_sentiment present,340,cohort
+primary_null_category,management_prepared_sentiment present,339,cohort
+primary_null_category,analyst_question_sentiment present,336,cohort
+primary_null_category,uncertainty_word_proportion present,336,cohort
+primary_null_category,congratulations_mentioned present,336,cohort
+primary_null_category,guidance_specificity present,335,cohort
+primary_null_category,guidance_revision present,335,cohort
+primary_null_category,qa_evasiveness present,335,cohort
+primary_null_category,one_off_attribution present,335,cohort
+primary_null_category,analyst_concern_focus present,335,cohort
+primary_null_category,no_prior_guidance present,335,cohort
+primary_all_calls,cohort events,499,cohort
+primary_all_calls,primary_timing_sample == True,464,cohort
+primary_all_calls,call matched (any date),448,cohort
+primary_all_calls,day 0 consistent with call,447,cohort
+primary_all_calls,car_0_1_pct present,446,cohort
+primary_all_calls,eps_surprise_pct present,446,cohort
+primary_all_calls,log_market_cap present,443,cohort
+primary_all_calls,price_to_book present,412,cohort
+primary_all_calls,price_change_52w_pct present,411,cohort
+primary_all_calls,beta present,411,cohort
+primary_all_calls,transcript_sentiment present,411,cohort
+primary_all_calls,management_prepared_sentiment present,410,cohort
+primary_all_calls,analyst_question_sentiment present,407,cohort
+primary_all_calls,uncertainty_word_proportion present,407,cohort
+primary_all_calls,congratulations_mentioned present,407,cohort
+primary_all_calls,guidance_specificity present,405,cohort
+primary_all_calls,guidance_revision present,360,cohort
+primary_all_calls,qa_evasiveness present,360,cohort
+primary_all_calls,one_off_attribution present,360,cohort
+primary_all_calls,analyst_concern_focus present,360,cohort

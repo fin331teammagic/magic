@@ -237,8 +237,22 @@ def main(argv=None):
     parser.add_argument("--data-status", default=rm.DATA_STATUS,
                         help="'cohort' for real scores; 'synthetic' for tests.")
     parser.add_argument("--placebo-draws", type=int, default=PLACEBO_DRAWS)
+    parser.add_argument("--outcome-override", nargs=2, metavar=("CSV", "COLUMN"),
+                        help="Replace car_0_1_pct with COLUMN from CSV (by event_id), e.g. the "
+                             "Amendment 4 255-session CAR. Write to a separate --out-dir.")
     args = parser.parse_args(argv)
-    paths = (args.cohort, args.dictionary_features, args.day0_check, args.llm_scores)
+    cohort_path = args.cohort
+    if args.outcome_override:
+        source, column = args.outcome_override
+        cohort = pd.read_csv(args.cohort)
+        override = pd.read_csv(source)[["event_id", column]]
+        cohort = cohort.drop(columns=[rm.OUTCOME]).merge(override, on="event_id", how="left",
+                                                          validate="one_to_one")
+        cohort = cohort.rename(columns={column: rm.OUTCOME})
+        args.out_dir.mkdir(parents=True, exist_ok=True)
+        cohort_path = args.out_dir / "cohort_with_outcome_override.csv"
+        cohort.to_csv(cohort_path, index=False)
+    paths = (cohort_path, args.dictionary_features, args.day0_check, args.llm_scores)
 
     runs, coefs, flows, preds = [], [], [], []
     for sample, options in VARIANTS.items():

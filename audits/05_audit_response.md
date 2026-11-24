@@ -207,6 +207,20 @@ In `5320e8d`:
 
 ## Other suggestions in the audit
 
-- **The easy_es estimation window** (164 rather than 255 sessions) is added
-  as a pre-specified robustness row in `specs_tried.md` Amendment 4. It has
-  not been run yet.
+- **The easy_es estimation window: run** (`specs_tried.md` Amendment 4,
+  run log rows 17–19).
+  - `code/car_255_robustness.py` reproduces the committed `car_0_1_pct`
+    when given easy_es's own window: 492 events, max difference under
+    0.0001 pp.
+  - With a true 255-session window, CAR[0,1] shifts by a median of
+    0.27 pp, at most 2.75 pp. HPE moves from 16.89 to 17.91, as in your
+    recomputation.
+  - Rerunning Runs 1–3 on that outcome leaves the conclusion unchanged:
+    holdout R² goes 0.031 → −0.002 → −0.043 on the primary sample.
+  - The one exception is the all-calls row, where Run 3's interval is just
+    above zero ([0.05, 1.94]). It rests on 2 bootstrap weeks, with a
+    placebo share of 0.12, and is disclosed.
+- **LLM score reliability** (your run notes): we drew 30 call IDs
+  (`inputs/llm_reliability_sample_ids.csv`, seed 331) for a second scoring
+  run. `code/compare_llm_runs.py` will report agreement and weighted kappa
+  once one exists. Until then, single-run scoring is a disclosed limitation.
