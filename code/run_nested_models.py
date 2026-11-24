@@ -19,6 +19,14 @@ scores exist:
   placebo (1,000 draws, seed 331). "Supported" only if the bootstrap 95%
   interval lies entirely above zero.
 
+Robustness variants (Amendment 5), each labeled in the ``sample`` column:
+
+- ``all_events``: no primary-timing filter.
+- ``primary_null_category``: ``guidance_revision = null`` coded 0 plus a
+  ``no_prior_guidance`` indicator in the Run 3 block, instead of dropped.
+- ``primary_all_calls``: no training-cutoff filter (needs ``--llm-scores-all``
+  with all 474 calls scored).
+
 Writes ``outputs/model_runs.csv``, ``outputs/model_coefficients.csv``,
 ``outputs/run_predictions.csv`` and ``outputs/nested_sample_flow.csv``, in the
 dashboard's three-run layout.
@@ -46,14 +54,29 @@ RUN2 = ["transcript_sentiment", "management_prepared_sentiment",
         "congratulations_mentioned"]
 RUN3 = ["guidance_specificity", "guidance_revision", "qa_evasiveness",
         "one_off_attribution", "analyst_concern_focus"]
-BLOCKS = {1: list(rm.RUN1), 2: list(rm.RUN1) + RUN2, 3: list(rm.RUN1) + RUN2 + RUN3}
-ADDED = {2: RUN2, 3: RUN3}
+NULL_INDICATOR = "no_prior_guidance"
+
+
+def make_blocks(run3=RUN3):
+    """Predictor lists for Runs 1-3 and the block each run adds."""
+    blocks = {1: list(rm.RUN1), 2: list(rm.RUN1) + RUN2, 3: list(rm.RUN1) + RUN2 + list(run3)}
+    return blocks, {2: RUN2, 3: list(run3)}
+
+
+BLOCKS, ADDED = make_blocks()
+VARIANTS = {
+    "primary": {"primary_only": True},
+    "all_events": {"primary_only": False},
+    "primary_null_category": {"primary_only": True, "null_category": True},
+    "primary_all_calls": {"primary_only": True, "cutoff_filter": False},
+}
 LABELS = {1: "Run 1: fundamentals", 2: "Run 2: + dictionary text",
           3: "Run 3: + LLM variables"}
 PLACEBO_DRAWS = 1000
 
 
-def load_sample(cohort_path, dictionary_path, day0_path, llm_path, primary_only):
+def load_sample(cohort_path, dictionary_path, day0_path, llm_path, primary_only,
+                null_category=False, cutoff_filter=True, sample=None):
     cohort = pd.read_csv(cohort_path)
     for name, column in rm.RUN1.items():
         cohort[name] = cohort[column]
@@ -62,10 +85,15 @@ def load_sample(cohort_path, dictionary_path, day0_path, llm_path, primary_only)
     llm = pd.read_csv(llm_path)
     llm = llm[(llm["parse_status"] == "ok") & (llm["status"] == "scored")]
     llm = llm.rename(columns={"id": "event_id"})[["event_id"] + RUN3]
+    run3 = list(RUN3)
+    if null_category:
+        llm[NULL_INDICATOR] = llm["guidance_revision"].isna().astype(float)
+        llm["guidance_revision"] = llm["guidance_revision"].fillna(0)
+        run3.append(NULL_INDICATOR)
     frame = (cohort.merge(text, on="event_id", how="left", validate="one_to_one")
              .merge(day0, on="event_id", how="left", validate="one_to_one")
              .merge(llm, on="event_id", how="left", validate="one_to_one"))
-    sample = "primary" if primary_only else "all_events"
+    sample = sample or ("primary" if primary_only else "all_events")
     flow = [{"sample": sample, "step": "cohort events", "n": len(frame)}]
 
     def keep(mask, step):
@@ -75,9 +103,12 @@ def load_sample(cohort_path, dictionary_path, day0_path, llm_path, primary_only)
 
     if primary_only:
         keep(frame["primary_timing_sample"] == True, "primary_timing_sample == True")  # noqa: E712
-    keep(frame["after_training_cutoff"] == True, "call after 2026-06-30 cutoff")  # noqa: E712
+    if cutoff_filter:
+        keep(frame["after_training_cutoff"] == True, "call after 2026-06-30 cutoff")  # noqa: E712
+    else:
+        keep(frame["after_training_cutoff"].notna(), "call matched (any date)")
     keep(frame["day0_check"] == "consistent_with_call", "day 0 consistent with call")
-    for column in [rm.OUTCOME] + BLOCKS[3]:
+    for column in [rm.OUTCOME] + make_blocks(run3)[0][3]:
         keep(frame[column].notna(), f"{column} present")
     frame = frame.copy()
     frame["timestamp_utc"] = pd.to_datetime(frame["earnings_timestamp"], utc=True)
@@ -107,25 +138,29 @@ def fit(frame, columns, bounds, clustered=True):
     return sm.OLS(y, x).fit(), x
 
 
-def placebo_share(train, test, run, bounds, actual_gain, draws=PLACEBO_DRAWS, seed=rm.SEED):
+def placebo_share(train, test, run, bounds, actual_gain, draws=PLACEBO_DRAWS, seed=rm.SEED,
+                  blocks=BLOCKS, added=ADDED):
     """Share of shuffled-block draws whose dMSE is at least the actual dMSE."""
     rng = np.random.default_rng(seed)
-    previous, _ = fit(train, BLOCKS[run - 1], bounds, clustered=False)
-    prev_err = test[rm.OUTCOME].to_numpy() - previous.predict(design(test, BLOCKS[run - 1], bounds)).to_numpy()
+    previous, _ = fit(train, blocks[run - 1], bounds, clustered=False)
+    prev_err = test[rm.OUTCOME].to_numpy() - previous.predict(design(test, blocks[run - 1], bounds)).to_numpy()
     hits = 0
     for _ in range(draws):
         tr, te = train.copy(), test.copy()
-        tr[ADDED[run]] = tr[ADDED[run]].to_numpy()[rng.permutation(len(tr))]
-        te[ADDED[run]] = te[ADDED[run]].to_numpy()[rng.permutation(len(te))]
-        model, _ = fit(tr, BLOCKS[run], bounds, clustered=False)
-        err = te[rm.OUTCOME].to_numpy() - model.predict(design(te, BLOCKS[run], bounds)).to_numpy()
+        tr[added[run]] = tr[added[run]].to_numpy()[rng.permutation(len(tr))]
+        te[added[run]] = te[added[run]].to_numpy()[rng.permutation(len(te))]
+        model, _ = fit(tr, blocks[run], bounds, clustered=False)
+        err = te[rm.OUTCOME].to_numpy() - model.predict(design(te, blocks[run], bounds)).to_numpy()
         hits += np.mean(prev_err ** 2) - np.mean(err ** 2) >= actual_gain
     return hits / draws
 
 
-def run_sample(paths, primary_only, placebo_draws=PLACEBO_DRAWS):
-    frame, flow = load_sample(*paths, primary_only)
-    sample = "primary" if primary_only else "all_events"
+def run_sample(paths, primary_only, placebo_draws=PLACEBO_DRAWS, null_category=False,
+               cutoff_filter=True, sample=None):
+    sample = sample or ("primary" if primary_only else "all_events")
+    frame, flow = load_sample(*paths, primary_only, null_category=null_category,
+                              cutoff_filter=cutoff_filter, sample=sample)
+    blocks, added = make_blocks(RUN3 + [NULL_INDICATOR] if null_category else RUN3)
     if len(frame) < rm.MIN_EVENTS:
         print(f"[{sample}] only {len(frame)} complete events: results are exploratory.")
     full_bounds = bounds_for(frame)
@@ -136,14 +171,14 @@ def run_sample(paths, primary_only, placebo_draws=PLACEBO_DRAWS):
 
     runs, coefs, preds, errors = [], [], {}, {}
     for run in (1, 2, 3):
-        full, x_full = fit(frame, BLOCKS[run], full_bounds)
-        trained, _ = fit(train, BLOCKS[run], bounds)
-        pred = trained.predict(design(test, BLOCKS[run], bounds)).to_numpy()
+        full, x_full = fit(frame, blocks[run], full_bounds)
+        trained, _ = fit(train, blocks[run], bounds)
+        pred = trained.predict(design(test, blocks[run], bounds)).to_numpy()
         err = actual - pred
         preds[run], errors[run] = pred, err
         row = {
             "run": run, "label": LABELS[run], "sample": sample,
-            "n_features": len(BLOCKS[run]),
+            "n_features": len(blocks[run]),
             "train_n": len(train), "test_n": len(test),
             "excluded_n": flow[0]["n"] - len(frame),
             "train_cutoff": train["day0"].max().date().isoformat(),
@@ -156,8 +191,8 @@ def run_sample(paths, primary_only, placebo_draws=PLACEBO_DRAWS):
         }
         if run > 1:
             names = list(full.params.index)
-            restriction = np.zeros((len(ADDED[run]), len(names)))
-            for i, name in enumerate(ADDED[run]):
+            restriction = np.zeros((len(added[run]), len(names)))
+            for i, name in enumerate(added[run]):
                 restriction[i, names.index(name)] = 1
             wald = full.f_test(restriction)
             gain = errors[run - 1] ** 2 - err ** 2
@@ -168,13 +203,14 @@ def run_sample(paths, primary_only, placebo_draws=PLACEBO_DRAWS):
                 "delta_mse_ci_low": interval[0], "delta_mse_ci_high": interval[1],
                 "bootstrap_weeks": n_weeks,
                 "placebo_share_at_least_actual": placebo_share(
-                    train, test, run, bounds, gain.mean(), draws=placebo_draws),
+                    train, test, run, bounds, gain.mean(), draws=placebo_draws,
+                    blocks=blocks, added=added),
                 "supported": bool(interval[0] > 0),
             })
         runs.append(row)
         sd = x_full.drop(columns="const").std(ddof=1)
         ci = full.conf_int()
-        for name in BLOCKS[run]:
+        for name in blocks[run]:
             coefs.append({
                 "run": run, "sample": sample, "variable": name,
                 "coef": full.params[name], "std_error": full.bse[name], "p_value": full.pvalues[name],
@@ -195,6 +231,8 @@ def main(argv=None):
     parser.add_argument("--dictionary-features", type=Path, default=DEFAULT_DICTIONARY)
     parser.add_argument("--day0-check", type=Path, default=DEFAULT_DAY0)
     parser.add_argument("--llm-scores", type=Path, required=True)
+    parser.add_argument("--llm-scores-all", type=Path,
+                        help="Scores for all matched calls, for the primary_all_calls row.")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--data-status", default=rm.DATA_STATUS,
                         help="'cohort' for real scores; 'synthetic' for tests.")
@@ -203,8 +241,15 @@ def main(argv=None):
     paths = (args.cohort, args.dictionary_features, args.day0_check, args.llm_scores)
 
     runs, coefs, flows, preds = [], [], [], []
-    for primary_only in (True, False):
-        r, c, p, f = run_sample(paths, primary_only, args.placebo_draws)
+    for sample, options in VARIANTS.items():
+        variant_paths = paths
+        if not options.get("cutoff_filter", True):
+            if args.llm_scores_all is None:
+                continue
+            variant_paths = paths[:3] + (args.llm_scores_all,)
+        r, c, p, f = run_sample(variant_paths, options["primary_only"], args.placebo_draws,
+                                null_category=options.get("null_category", False),
+                                cutoff_filter=options.get("cutoff_filter", True), sample=sample)
         runs += r
         coefs += c
         flows += f

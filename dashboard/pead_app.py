@@ -173,6 +173,22 @@ if use_fixtures:
         icon="🧪",
     )
 
+def count_llm_scored(path=REPO_ROOT / "outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_all474.csv"):
+    try:
+        return int((pd.read_csv(path)["parse_status"] == "ok").sum())
+    except Exception:  # file absent: show Pending
+        return float("nan")
+
+
+n_llm_scored = count_llm_scored()
+
+SAMPLE_LABELS = {
+    "primary": "Primary (304)",
+    "all_events": "All timing events",
+    "primary_null_category": "No-guidance as category",
+    "primary_all_calls": "All 474 calls",
+}
+
 tabs = st.tabs(
     ["Overview", "Results (checkpoint)", "Data coverage", "Data quality & gaps", "Event explorer",
      "Language findings", "Methods & limitations"]
@@ -197,12 +213,10 @@ with tabs[0]:
                 help="S&P 500 constituents on the archived June 30, 2026 list.")
     m[1].metric("Verified Q2 2026 events", fmt_count(stage["Verified Q2 2026 events"]), border=True,
                 help="Pending until the verified event manifest and cohort output are delivered.")
-    located, cleared = stage["Transcript located"], stage["Transcript rights cleared"]
-    m[2].metric("Transcripts rights-cleared", fmt_count(cleared), border=True,
-                delta=None if pd.isna(located) else "{} located, rights unknown".format(
-                    int(located) - int(0 if pd.isna(cleared) else cleared)),
-                delta_color="off", delta_arrow="off",
-                help="Locating a transcript is not permission to retain it or send it to a model.")
+    m[2].metric("Calls scored by AI", fmt_count(n_llm_scored), border=True,
+                delta="474 matched to the cohort", delta_color="off", delta_arrow="off",
+                help="Course-provided Capital IQ transcripts, scored by the course lead on a local model "
+                     "(Gemma 4); no transcript text is in this repo.")
     m[3].metric("Model comparison", "Pending" if not (data["metrics"].available and data["metrics"].source == "real")
                 else "Delivered", border=True)
 
@@ -278,76 +292,122 @@ with results_tab:
         "trading day (`specs_tried.md` §3). The abnormal return over the 20 trading sessions after the "
         "reaction session is a secondary outcome."
     )
-    if cohort.available and "car_0_1_pct" in cohort.frame.columns:
-        st.info(
-            "**Real data is in:** {:,} Q2 2026 events with CAR[0,1] and the Run 1 Yahoo variables "
-            "(see *Event explorer*). **Real Run 1** (fundamentals) results are on the *Findings* tab. The "
-            "three-run layout below stays **synthetic** until Runs 2–3 are scored on real transcripts "
-            "(`specs_tried.md` §8).".format(int(cohort.frame["car_0_1_pct"].notna().sum())),
-            icon="📌",
-        )
-    if not (final_ds.available and runs_ds.available):
-        awaiting("the merged final dataset", "The final-shape dataset and model runs are not available.",
+    names = {}
+    if vars_ds.available:
+        names = dict(zip(vars_ds.frame["variable"], vars_ds.frame["variable"].str.replace("_", " ")))
+    if not runs_ds.available:
+        awaiting("Runs 1-3", "The model runs are not available.",
                  ["Run 1 to 3 holdout R², MAE and RMSE", "Which variables move CAR[0,1]",
                   "Predicted vs. actual reactions"],
-                 [DATASETS["final_dataset"].path, DATASETS["model_runs"].path])
+                 [DATASETS["model_runs"].path])
     else:
-        fd, runs = final_ds.frame, runs_ds.frame.sort_values("run")
-        if final_ds.status == SYNTHETIC or runs_ds.status == SYNTHETIC:
-            st.error(
-                "**SYNTHETIC DATA: NOT RESEARCH RESULTS.** Every number on this tab comes from 500 invented "
-                "earnings calls (tickers SYN001–SYN500) whose relationships were **planted** by "
-                "`code/build_synthetic_final_dataset.py`. The tab shows what the analysis will look like; the "
-                "real merged dataset will replace it with the same columns.",
-                icon="🧪",
-            )
-        names = {}
-        if vars_ds.available:
-            names = dict(zip(vars_ds.frame["variable"], vars_ds.frame["variable"].str.replace("_", " ")))
+        all_runs = runs_ds.frame
+        if runs_ds.status == SYNTHETIC:
+            synthetic_banner("The model runs below")
+        samples = list(dict.fromkeys(all_runs["sample"])) if "sample" in all_runs.columns else [None]
+        sample = samples[0]
+        if len(samples) > 1:
+            sample = st.segmented_control(
+                "Sample", samples, default=samples[0], required=True, key="runs_sample",
+                format_func=lambda v: SAMPLE_LABELS.get(v, v),
+                help="Primary is the pre-specified result. The others are robustness checks "
+                     "(specs_tried.md Amendment 5).")
+
+        def pick(frame):
+            if frame is None or sample is None or "sample" not in frame.columns:
+                return frame
+            return frame[frame["sample"] == sample]
+
+        runs = pick(all_runs).sort_values("run")
         first, last = runs.iloc[0], runs.iloc[-1]
+        if runs_ds.status != SYNTHETIC and "delta_mse_vs_previous" in runs.columns:
+            supported = runs["supported"].eq(True).any()
+            parts = []
+            for _, r in runs[runs["run"] > 1].iterrows():
+                block = "the dictionary block (Run 2)" if r["run"] == 2 else "the AI block (Run 3)"
+                parts.append("{} is {} in-sample (Wald p = {:.4f}) and makes holdout predictions **{}**".format(
+                    block, "jointly significant" if r["block_wald_p"] < 0.05 else "not significant",
+                    r["block_wald_p"], "better" if r["delta_mse_vs_previous"] > 0 else "worse"))
+            st.info(
+                "**Answer (pre-specified test):** the language variables are **{}**. {}. Holdout R² by run: "
+                "{}.".format("supported" if supported else "not supported", (lambda t: t[:1].upper() + t[1:])("; ".join(parts)),
+                             " → ".join("{:.3f}".format(v) for v in runs["out_of_sample_r2"])),
+                icon="📌")
 
         k = st.columns(4)
-        k[0].metric("Earnings calls", "{:,}".format(len(fd)), border=True)
-        k[1].metric("Used in models", "{:,}".format(int(first["train_n"] + first["test_n"])), border=True,
-                    delta="{:,} excluded (missing)".format(int(first["excluded_n"])),
-                    delta_color="off", delta_arrow="off",
+        k[0].metric("Events used", "{:,}".format(int(first["train_n"] + first["test_n"])), border=True,
+                    delta="{:,} excluded".format(int(first["excluded_n"])), delta_color="off", delta_arrow="off",
                     help="Same events in every run. Events missing any variable are dropped, never zero-filled.")
-        k[2].metric("Holdout events", "{:,}".format(int(first["test_n"])), border=True,
-                    delta="{:,} training events".format(int(first["train_n"])), delta_color="off", delta_arrow="off",
-                    help="Sorted by call date: fit on the earliest 60%, tested once on the latest 40%.")
+        k[1].metric("Training / holdout", "{} / {}".format(int(first["train_n"]), int(first["test_n"])),
+                    border=True, help="Sorted by day 0: fit on the earliest 60%, tested once on the latest 40%.")
+        if "in_sample_r2" in runs.columns:
+            k[2].metric("In-sample R², Run 3", "{:.3f}".format(last["in_sample_r2"]), border=True,
+                        delta="{:+.3f} vs. Run 1".format(last["in_sample_r2"] - first["in_sample_r2"]))
         k[3].metric("Holdout R², Run 3", "{:.3f}".format(last["out_of_sample_r2"]), border=True,
                     delta="{:+.3f} vs. Run 1".format(last["out_of_sample_r2"] - first["out_of_sample_r2"]))
 
         st.markdown("#### Does each layer of information improve prediction?")
         st.caption("Each run adds variables to the previous one, on the same events. Higher R² and lower error "
-                   "mean better holdout predictions. Below 0 R² would mean worse than guessing the average.")
+                   "mean better holdout predictions. Below 0 R² means worse than guessing the training average.")
         st.altair_chart(charts.run_metrics_chart(runs))
-        st.caption("Runs: **1** Yahoo Finance variables (EPS surprise, size, valuation, quality, leverage, risk, "
-                   "momentum, attention) · **2** + dictionary sentiment and 'congratulations' · **3** + AI-scored "
-                   "outlook tone and guidance specificity. Training: calls through {}. Holdout: calls from {}.".format(
-                       first["train_cutoff"], first["test_start"]))
+        st.caption("Runs: **1** EPS surprise, size, price-to-book, 52-week return, beta · **2** + dictionary "
+                   "sentiment (whole call, prepared remarks, analyst questions), uncertainty words, analyst "
+                   "'congratulations' · **3** + AI-scored guidance specificity, guidance revision, Q&A "
+                   "evasiveness, one-off attribution, analyst concern focus. Training: day 0 through {}. "
+                   "Holdout: from {}.".format(first["train_cutoff"], first["test_start"]))
+        if "block_wald_p" in runs.columns:
+            tests = runs[runs["run"] > 1].assign(
+                comparison=lambda d: d["run"].map({2: "Run 2 vs. 1", 3: "Run 3 vs. 2"}))
+            st.dataframe(
+                tests[["comparison", "block_wald_p", "delta_mse_vs_previous", "delta_mse_ci_low",
+                       "delta_mse_ci_high", "placebo_share_at_least_actual", "bootstrap_weeks"]],
+                hide_index=True, column_config={
+                    "comparison": "Comparison",
+                    "block_wald_p": st.column_config.NumberColumn("In-sample Wald p", format="%.4f"),
+                    "delta_mse_vs_previous": st.column_config.NumberColumn(
+                        "Holdout MSE gain", format="%.2f", help="Positive = the added block predicts better."),
+                    "delta_mse_ci_low": st.column_config.NumberColumn("95% low", format="%.2f"),
+                    "delta_mse_ci_high": st.column_config.NumberColumn("95% high", format="%.2f"),
+                    "placebo_share_at_least_actual": st.column_config.NumberColumn(
+                        "Placebo share ≥ actual", format="%.2f",
+                        help="Share of 1,000 shuffled-score runs that did at least as well. Small = real signal."),
+                    "bootstrap_weeks": st.column_config.NumberColumn("Holdout weeks", format="%d"),
+                })
+            st.caption("The holdout spans only {} calendar weeks of day 0, so the bootstrap interval resamples "
+                       "very few blocks and is not reliable on its own; the placebo share is the steadier "
+                       "guide.".format(int(tests["bootstrap_weeks"].max())))
 
         a, b = st.columns([3, 2], gap="large")
         with a:
-            st.markdown("#### Which variables matter?")
+            st.markdown("#### Which variables matter? (in-sample)")
             if coefs_ds.available:
                 run_id = st.segmented_control("Model", list(runs["run"]), default=int(last["run"]),
                                               format_func=lambda r: "Run {}".format(r), required=True,
                                               key="coef_run")
-                st.altair_chart(charts.coefficient_chart(
-                    coefs_ds.frame[coefs_ds.frame["run"] == run_id], names), width="stretch")
+                coefs = pick(coefs_ds.frame)
+                st.altair_chart(charts.coefficient_chart(coefs[coefs["run"] == run_id], names), width="stretch")
                 st.caption("Dot = estimated change in CAR[0,1] (percentage points) when the variable rises by "
-                           "one standard deviation, holding the others fixed. Line = 95% interval.")
+                           "one standard deviation, holding the others fixed. Line = 95% interval, standard "
+                           "errors clustered by day 0. Guidance specificity is 2 for 298 of 304 primary "
+                           "events, so its estimate rests on 6 calls.")
         with b:
             st.markdown("#### Predicted vs. actual (holdout)")
             if preds_ds.available:
-                pick = st.selectbox("Model", list(runs["label"]), index=len(runs) - 1, key="pred_run")
-                run_id = int(runs.loc[runs["label"] == pick, "run"].iloc[0])
-                st.altair_chart(charts.run_predictions_chart(preds_ds.frame, "pred_run{}".format(run_id), pick),
-                                width="stretch")
+                choice = st.selectbox("Model", list(runs["label"]), index=len(runs) - 1, key="pred_run")
+                run_id = int(runs.loc[runs["label"] == choice, "run"].iloc[0])
+                st.altair_chart(charts.run_predictions_chart(pick(preds_ds.frame), "pred_run{}".format(run_id),
+                                                             choice), width="stretch")
                 st.caption("Points on the dashed line are perfect predictions.")
 
-        st.markdown("#### Explore one variable against the reaction")
+    if final_ds.available:
+        fd = final_ds.frame
+        st.divider()
+        if final_ds.status == SYNTHETIC:
+            st.error(
+                "**SYNTHETIC DATA BELOW: NOT RESEARCH RESULTS.** The variable explorer uses 500 invented "
+                "earnings calls (SYN001–SYN500) from `code/build_synthetic_final_dataset.py`, to show the layout. "
+                "The real results are above.", icon="🧪")
+        st.markdown("#### Explore one variable against the reaction (synthetic preview)")
         numeric = [v for v in (vars_ds.frame["variable"] if vars_ds.available else fd.columns)
                    if v in fd.columns and v not in ("car_0_1_pct", "car_final_20s_pct")
                    and pd.api.types.is_numeric_dtype(fd[v])]
@@ -716,8 +776,8 @@ with tabs[4]:
             base = mt.loc["baseline"]
             outcome = str(base.get("outcome", "car_0_1_pct"))
             st.info(
-                "**Run 1 only (fundamentals).** The language runs (2 and 3) are not delivered yet, so there is no "
-                "language comparison. Outcome: `{}`. Training calls through {}; holdout from {}.".format(
+                "**Run 1 alone (fundamentals), on its full sample.** Runs 1–3 together, on the smaller "
+                "transcript sample, are on the *Results* tab. Outcome: `{}`. Training calls through {}; holdout from {}.".format(
                     outcome, str(base.get("train_cutoff", ""))[:10], str(base.get("test_start", ""))[:10]),
                 icon="📌",
             )
@@ -863,12 +923,17 @@ LIMITATIONS = {
          "Other news released with earnings (guidance, M&A, macro data) can drive returns.", "audit"),
     ],
     "Transcripts and AI scoring": [
-        ("Rights not yet established",
-         "No transcript is rights-cleared for retention or external-model use. Public visibility "
-         "is not permission; scraping restricted sites is not allowed.", "README, STATUS"),
+        ("Licensed transcripts stay local",
+         "Course-provided Capital IQ transcripts are kept out of the repo; only numeric scores are "
+         "committed. The course lead scored them on his own computer, so no text went to an outside "
+         "service.", "Amendment 5"),
         ("Model training-data cutoff",
-         "The proposed scoring model's documented cutoff (Aug 31, 2025) predates the cohort, but a "
-         "published cutoff does not prove specific events were absent from training data.", "README"),
+         "Gemma 4's training data runs to January 2025 and the primary sample uses calls after June 30, "
+         "2026, but a published cutoff does not prove specific events were absent from training data.",
+         "Amendment 5"),
+        ("One scoring run",
+         "Scores come from a single temperature-0 run of one model; no repeat or second-model check "
+         "on real calls. Guidance specificity is 2 for 98% of calls.", "Amendment 5"),
         ("Leakage controls",
          "Scores must be fixed and reproducible (pinned model, versioned prompt) and must not see "
          "later returns or post-call information.", "AGENTS"),

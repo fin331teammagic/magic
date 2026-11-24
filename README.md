@@ -13,14 +13,21 @@ standard fundamental predictors? The design is fixed in
 [`specs_tried.md`](specs_tried.md): three nested OLS runs on the same events,
 with a chronological holdout evaluated once.
 
-**Current result (Run 1, fundamentals only, 2026-11-22):**
-- In-sample R² is 0.036 on 426 primary-sample events (clustered Wald
-  p = 0.0005).
-- Holdout out-of-sample R² is 0.004, which is not distinguishable from
-  forecasting the mean.
-- Files: [`outputs/model_comparison_metrics.csv`](outputs/model_comparison_metrics.csv)
-  and [`outputs/run1_coefficients.csv`](outputs/run1_coefficients.csv).
-- Runs 2–3 need the real transcripts scored (see `specs_tried.md` §8).
+**Result (Runs 1–3, 2026-11-23): language is not supported as a
+predictor.** On the 304-event primary transcript sample, both the dictionary
+block (Run 2) and the LLM block (Run 3) are jointly significant in-sample:
+Wald p = 0.0001 and 0.0002, with R² rising from 0.030 to 0.075 to 0.111.
+On the chronological holdout, however, each block makes predictions worse:
+out-of-sample R² falls from 0.034 to 0.001 to −0.047. Shuffled scores do
+at least as well in 64% and 76% of placebo draws. The strongest LLM
+variable is guidance revision: +1.6 pp of CAR[0,1] per step, p = 0.037.
+
+- The holdout spans only 2 calendar weeks.
+- Details and robustness are in `specs_tried.md` §8 (runs 12–16).
+- Files: [`outputs/model_runs.csv`](outputs/model_runs.csv) and
+  [`outputs/model_coefficients.csv`](outputs/model_coefficients.csv).
+- Run 1 alone, on its full 426-event sample, gives in-sample R² 0.036 and
+  holdout R² 0.004 (`outputs/model_comparison_metrics.csv`).
 
 Post-earnings announcement drift (PEAD) is established in prior research, so
 the project is not premised on rediscovering that positive surprises predict

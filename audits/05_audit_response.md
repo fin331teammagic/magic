@@ -8,16 +8,16 @@ Team Magic. This responds to `audits/04_instructor_audit.md` (audited commit
 > The repository has moved from `gum327/magic` to `fin331teammagic/magic`,
 > and the old links redirect.
 >
-> Still open:
-> - Runs 2–3: the Run 3 scores now exist. You scored the calls on a local
->   model (PR #22, run log row 10). The models run once the team adopts
->   Amendment 5 (draft in `specs_tried.md`).
+> **All findings are addressed.** Runs 1–3 ran on 2026-11-23, using your
+> local Gemma 4 scores (PR #22) under Amendment 5. Amendment 5 was committed
+> in `b697c88` before any Run 2–3 fit. Results are in `specs_tried.md` §8
+> (runs 12–16) and on the dashboard's Results tab.
 
 ## Summary
 
 | Finding | Response | Where |
 |---|---|---|
-| B1 · No real-data results | **Fixed** for Run 1. Run 3 scores are in (PR #22); Runs 2–3 next | `31df28b`, `fef8d4c` |
+| B1 · No real-data results | **Fixed.** Runs 1–3 on the real cohort | `31df28b`, `b697c88`, this branch |
 | B2 · Transcripts don't cover the cohort | **Fixed** by amendment, option (a). Calls scored locally | `971e1a3`, `d2164d9`, `fef8d4c` |
 | B3 · No live dashboard URL | **Fixed.** https://team-magic-pead.streamlit.app, linked at the top of the README | `065bbde` |
 | B4 · Unmerged branches | **Fixed.** `main` contains all three heads (`ebb0882`, `468ec02`, `3d463bc`) | `15a054c` |
@@ -85,6 +85,19 @@ It reads `outputs/q2_2026_cohort.csv` as committed in `a6ef269`.
 
 The dashboard's *Findings* tab now shows real Run 1. It was checked with
 Streamlit's `AppTest`, with no exceptions.
+
+**Runs 1–3 (added 2026-11-23).** These use the 304-event primary
+common sample: after the cutoff, day 0 consistent with the call, and
+complete case.
+
+- **In-sample:** R² goes 0.030 → 0.075 → 0.111. Both language blocks are
+  jointly significant (Wald p = 0.0001 and 0.0002).
+- **Holdout:** R² goes 0.034 → 0.001 → −0.047, so each block predicts worse
+  than the run before. The placebo shares are 0.64 and 0.76.
+- **Conclusion:** the pre-specified test does **not** support the language
+  variables.
+- **Robustness:** the robustness rows agree.
+- **Limitation:** the holdout spans only 2 weeks of day 0.
 
 ## B2 · Transcript coverage: fixed by amendment, option (a)
 
