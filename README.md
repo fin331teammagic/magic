@@ -335,6 +335,9 @@ python code/run_nested_models.py \
                                                # Runs 1-3 + robustness (runs 12-15)
 python code/describe_run3_features.py \
   --llm-scores outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv
+python code/car_255_robustness.py --mode full   # Amendment 4 outcome (re-pulls Yahoo prices)
+python code/run_nested_models.py --llm-scores <as above> --llm-scores-all <as above> \
+  --outcome-override outputs/q2_2026_car_255.csv car_0_1_pct_255 --out-dir outputs/robustness_car255
 python code/exploratory_sentiment_gap.py \
   --llm-scores outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv
 python -m unittest discover -s tests

@@ -250,6 +250,9 @@ failed and discarded runs.
 | 14 | 2026-11-23 | Abby | same, primary; `guidance_revision` null as its own category (robustness, Amendment 5) | CAR[0,1] | same + `no_prior_guidance` in Run 3 | 335; 214 / 121 | **Yes, once** | same files, `primary_null_category` |
 | 15 | 2026-11-23 | Abby | same, primary; all matched calls, no cutoff filter (robustness, Amendment 5) | CAR[0,1] | same, `..._gemma4_all474.csv` | 360; 247 / 113 | **Yes, once** | same files, `primary_all_calls` |
 | 16 | 2026-11-23 | Abby | primary common sample | CAR[0,1] | **Exploratory, not pre-specified:** sentiment gap (prepared-remarks minus analyst-question sentiment) with Run 1 controls, in-sample only, `code/exploratory_sentiment_gap.py` | 304 | No | `outputs/exploratory_sentiment_gap.csv` |
+| 17 | 2026-11-23 | Abby | cohort, Yahoo prices as of 2026-11-13, French FF5 (CRSP 202609) | — | Amendment 4 check: easy_es's window rebuilt by `code/car_255_robustness.py --mode easy_es`; reproduces committed `car_0_1_pct` for 492 events (max difference < 0.0001 pp) | 492 | No | — |
+| 18 | 2026-11-23 | Abby | same | — | Amendment 4 outcome: CAR[0,1] with a true 255-session estimation window (`--mode full`); median shift 0.27 pp, max 2.75, corr 0.997; HPE 16.89 → 17.91 as in the audit | 492 | No | `outputs/q2_2026_car_255.csv` |
+| 19 | 2026-11-23 | Abby | as runs 12–15, outcome replaced by run 18 | CAR[0,1], 255-session window | Nested Runs 1–3, all four samples, `run_nested_models.py --outcome-override` | 304 / 307 / 335 / 360 | **Yes, once** | `outputs/robustness_car255/` |
 
 **Runs 3 and 6–8: rubric checks on invented calls.** Each cell is the number
 of labels agreeing with the reference, summed over the five variables plus
@@ -443,7 +446,23 @@ Adds one robustness row to §6. It does not change the primary analysis.
   rerun Runs 1–3 on that outcome.
 - **Labeling:** results are reported as robustness, next to the primary
   table. The primary outcome stays easy_es `car_0_1_pct`.
-- **Status:** not yet run.
+- **Status:** run 2026-11-23 (run log rows 17–19).
+  - **Check:** the code reproduces easy_es's committed `car_0_1_pct` when
+    given easy_es's own window.
+  - **Primary sample, 255-session window:** the conclusion is unchanged.
+    - In-sample R² goes 0.027 → 0.071 → 0.111, with block Wald p = 0.0002
+      and 0.0001.
+    - Holdout R² goes 0.031 → −0.002 → −0.043, with placebo shares 0.65 and
+      0.70.
+    - `guidance_revision` is +1.65 per step (p = 0.032).
+  - **One exception:** the all-calls row (360 events, which includes the 79
+    pre-cutoff calls). There, Run 3 vs. 2 has a ΔMSE interval of
+    [0.05, 1.94], just above zero. It is not convincing evidence:
+    - the interval comes from 2 bootstrap weeks;
+    - the placebo share is 0.12;
+    - the in-sample Wald p is 0.062;
+    - the sample includes calls inside the training window;
+    - the same row on the primary outcome was not supported (run 15).
 
 **Amendment 5 · 2026-11-23 · Abby, with Cammy's sign-off · Run 3 scores.**
 Adopted before any Run 2 or Run 3 model fit. No outcome value had been read
