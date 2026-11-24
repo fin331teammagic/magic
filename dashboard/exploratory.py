@@ -3,7 +3,7 @@
 Presentation only. ``code/explore_llm_questions.py`` writes one folder per
 screen under ``outputs/exploratory_llm_questions/`` (for example
 ``v2.0_gemma4``); this module lists and loads those folders and applies the
-team's *proposed* lead rule to rows that are already computed. Nothing here
+team's lead rule (``specs_tried.md`` Amendment 6) to rows that are already computed. Nothing here
 estimates anything.
 """
 
@@ -18,9 +18,10 @@ FILES = ("one_at_a_time", "distribution", "agreement", "overlap", "block", "samp
 REQUIRED = "one_at_a_time"
 CONSENSUS = "consensus"
 
-# Proposed in the team message of 2026-11-24, not yet agreed. Change here.
-LEAD_Q_MAX = 0.05
-LEAD_PLACEBO_MAX = 0.10
+# Fixed 2026-11-24 (Abby, Michelle) before any v3.0 score was received;
+# recorded in specs_tried.md Amendment 6. Change only by a new amendment.
+LEAD_Q_MAX = 0.10
+LEAD_PLACEBO_MAX = 0.05
 LEAD_MIN_MODELS = 2
 
 
@@ -43,7 +44,7 @@ def load_screen(name: str, root: Path = ROOT) -> dict[str, pd.DataFrame | None]:
 
 
 def proposed_leads(single: pd.DataFrame) -> pd.DataFrame:
-    """One row per model and question (nulls dropped), with the proposed lead checks.
+    """One row per model and question (nulls dropped), with the Amendment 6 lead checks.
 
     - ``same_direction``: the coefficient has the same sign for at least
       ``LEAD_MIN_MODELS`` real models (the consensus row is not counted). With

@@ -576,3 +576,12 @@ the pre-specified answer (runs 12–19: not supported).
   - A question counts as a lead only if it is consistent across models and
     holds up on the holdout. One significant in-sample coefficient is not
     enough.
+- **Lead rule** (Abby and Michelle, 2026-11-24, fixed before any v3.0 score
+  was received). A model's question is a lead only if all three hold:
+  1. its coefficient has the same sign for at least 2 of the 3 models (the
+     consensus row is not counted);
+  2. its Benjamini–Hochberg q within that model is below 0.10;
+  3. its holdout ΔMSE is above 0, with a placebo share below 0.05.
+
+  `dashboard/exploratory.py` applies this rule. With only one model the
+  direction check cannot pass, so run 20 has no leads by construction.

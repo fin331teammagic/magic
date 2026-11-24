@@ -535,8 +535,9 @@ with explore_tab:
             ex_k[2].metric("Events (base sample)", "{:,}".format(ex_base_n), border=True,
                         help="Runs 1–2 complete, call after the cutoff, day 0 consistent. Each question "
                              "drops its own nulls, so its n can be lower.")
-            ex_k[3].metric("Proposed leads", int(ex_leads["proposed_lead"].sum()), border=True,
-                        help="Rows meeting all three checks below. The rule is proposed, not yet agreed.")
+            ex_k[3].metric("Leads", int(ex_leads["proposed_lead"].sum()), border=True,
+                        help="Rows meeting all three checks below (rule fixed in Amendment 6 before the "
+                             "v3.0 scores arrived).")
             if len(ex_real_models) < exploratory.LEAD_MIN_MODELS:
                 st.info("Only one model in this screen, so the 'same direction across models' check cannot "
                         "pass and no row is a proposed lead. That is expected for the v2.0 pipeline check.",
@@ -548,8 +549,8 @@ with explore_tab:
                        "standard deviation, holding fundamentals and dictionary measures fixed. Line = 95% "
                        "interval, standard errors clustered by day 0. Calls with a null answer are dropped.")
 
-            st.markdown("#### Proposed lead checks")
-            st.caption("Proposed rule: a question is a lead only if it points the same way for at least {} "
+            st.markdown("#### Lead checks (Amendment 6)")
+            st.caption("Rule, fixed before the v3.0 scores arrived: a question is a lead only if it points the same way for at least {} "
                        "models, has a Benjamini–Hochberg q below {:.2f} within its model, and improves the "
                        "holdout (MSE gain above 0) with a placebo share below {:.2f}. With 20 questions × 3 "
                        "models, about 3 p-values below 0.05 are expected by chance.".format(
@@ -571,7 +572,7 @@ with explore_tab:
                                                              "as well. Small = real signal."),
                     "models_same_direction": st.column_config.NumberColumn("Models, same sign"),
                     "same_direction": "Same direction", "survives_multiple_testing": "BH q ok",
-                    "helps_holdout": "Holdout ok", "proposed_lead": "Proposed lead",
+                    "helps_holdout": "Holdout ok", "proposed_lead": "Lead",
                 })
             if ex_block is not None and not ex_block.empty:
                 st.markdown("#### All questions together")
