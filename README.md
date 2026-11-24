@@ -61,20 +61,18 @@ earnings data.
 - **Transcript/AI extension:** The current pre-specification is
   `specs_tried.md`. It uses three nested regressions (fundamentals, then
   dictionary text measures, then five LLM-measured variables). The LLM
-  variables are scored with Claude through Expected Parrot's EDSL library,
-  run locally (`code/score_transcripts_edsl.py`, prompt
-  `prompts/transcript_llm_scores_v2.0.txt`). This replaces the earlier
-  `gpt-5.2-2025-12-11` proposal. Record the chosen Claude model's published
-  knowledge cutoff in `specs_tried.md`. A cutoff before the calls does not
-  prove the events are absent from training. Score real transcripts only
-  after transcript rights and the course lead's written approval are
-  confirmed. Transcripts come from the course's S&P Capital IQ files
-  (2024-01-05 to 2026-08-07, git-ignored in `restricted_data/`);
+  variables use the frozen prompt `prompts/transcript_llm_scores_v2.0.txt`
+  through EDSL with every remote feature off. The course lead scored them on
+  his own computer with Gemma 4 26B-A4B (training data to January 2025;
+  `docs/LOCAL_LLM_INSTRUCTOR_RUN.md`, Amendment 5), so no transcript went to
+  an outside service. Transcripts come from the course's S&P Capital IQ files
+  (2024-01-05 to 2026-08-07, git-ignored in `restricted_data/`).
   `code/build_transcript_inputs.py` matches 474 of the 499 cohort events to a
-  call. All current Claude models list a June 2026 training cutoff, so 79 of
-  those calls fall inside the training window. Coverage, the 21 events whose
-  cohort earnings date does not match the call, and the approval steps are in
-  `TRANSCRIPT_CHECKPOINT.md`.
+  call. The primary Run 2–3 sample keeps the 395 calls after 2026-06-30, the
+  cutoff fixed in Amendment 2 before scoring. A published cutoff does not
+  prove the events are absent from training. Coverage and the 21 events whose
+  cohort earnings date does not match the call are in
+  `TRANSCRIPT_CHECKPOINT.md` and `docs/DAY0_TRANSCRIPT_CHECK.md`.
 
 ### Prediction test
 
@@ -87,12 +85,14 @@ too small for a meaningful comparison, report the language analysis as
 exploratory or defer it. A model's published knowledge cutoff does not prove
 that specific events were absent from its training data.
 
-Use ordinary least squares for both models. The baseline uses EPS surprise
-and the announcement reaction; the augmented model adds the pre-specified
-language scores. Compare mean absolute error, root mean squared error, and
-out-of-sample R-squared relative to the training-set outcome mean. The helper
-`compare_chronological_predictions` in `code/pead_pipeline.py` enforces a
-shared complete-case sample and returns holdout predictions and metrics.
+Use ordinary least squares for all three nested runs (`specs_tried.md` §4–5).
+Run 1 has five fundamentals (EPS surprise, size, price-to-book, 52-week
+return, beta); day 0 and day 1 returns are never predictors, because they
+make up the outcome. Run 2 adds five dictionary measures and Run 3 adds five
+LLM measures. Compare mean absolute error, root mean squared error, and
+out-of-sample R-squared relative to the training-set outcome mean, with
+day-0-clustered Wald tests, a week-block bootstrap and a shuffled-score
+placebo. The code is `code/run_models.py` and `code/run_nested_models.py`.
 
 ### Provisional ETF factor proxies
 
@@ -112,6 +112,11 @@ series, estimation window, and missing-data rules; report SPY buy-and-hold
 abnormal returns as a robustness comparison.
 
 ## Data and access
+
+> **History.** This section records the transcript-access search before
+> 2026-11-19. The study then used the course's S&P Capital IQ transcripts,
+> kept local (`specs_tried.md` Amendments 2 and 5). Statements below such as
+> "no source is cleared" describe that earlier stage.
 
 The existing four-company Yahoo Finance sample validates event timing, return
 construction, and the dashboard only. It is not representative and is not
@@ -254,11 +259,9 @@ The generated files are:
 Regenerate all four with `python code/build_synthetic_checkpoint.py`. For
 other compatible handoffs, the shared merger is
 `code/merge_event_datasets.py`. The registry-based dashboard defaults to the
-four-company pilot when its final cohort output is absent and offers an
-optional synthetic fixture preview. It reads the separately exported
-synthetic dictionary features, but does not automatically load Gus's
-checkpoint financial and event-study files as a cohort output. The synthetic
-IDs do not match real events; no real transcript-feature merge is available.
+four-company pilot only if the cohort output is absent. With the committed
+outputs it shows the real cohort, Run 1, and Runs 1–3 with robustness
+samples; the synthetic fixtures are only an optional layout preview.
 
 ## Repository guide
 
@@ -307,7 +310,7 @@ IDs do not match real events; no real transcript-feature merge is available.
   scores; do not send this file to a model.
 - `inputs/synthetic_transcript_validation_claude_scores.csv` — Claude scores
   from the frozen-prompt validation run; not study data.
-- `dashboard/pead_app.py` — pilot and synthetic checkpoint dashboard.
+- `dashboard/pead_app.py` — the live dashboard: real cohort, Run 1, and Runs 1–3.
 - `dashboard/data_contract.py` — shared event schema, coverage summary, and
   dashboard quality checks.
 - `audits/01_self_audit.md` — current pilot limitations and validation needs.
@@ -381,14 +384,19 @@ The output contains both SPY buy-and-hold abnormal returns and ETF-proxy
 factor-adjusted returns. It remains a four-company pilot; it is not the S&P
 500 Q2 2026 analysis.
 
-After verifying source data, construct the cohort with:
+The Q2 2026 cohort is built by `code/gus_collect.py` (manifest, event
+study, features) and `code/build_cohort_dataset.py`. **The model results read
+the frozen `outputs/q2_2026_cohort.csv` committed in `a6ef269`
+(Amendment 1); do not overwrite it.** Rebuilding it re-pulls Yahoo data,
+which drifts (audit A4). To experiment with the older pilot pipeline on
+these events, write to a different file:
 
 ```bash
 python code/pead_pipeline.py \
   --events-csv inputs/q2_2026_events.csv \
   --universe-csv inputs/sp500_constituents_20260630.csv \
   --as-of 2026-11-06 \
-  --output outputs/q2_2026_cohort.csv
+  --output outputs/scratch_pead_pipeline_cohort.csv
 ```
 
 `q2_2026_events.csv` must follow the header in the template. The pipeline

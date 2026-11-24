@@ -160,7 +160,7 @@ DATASETS = {
                 "data_status",
             ),
             default_status=SYNTHETIC,
-            description="Proposed: saved output of compare_chronological_predictions.",
+            description="Run 1 on its full sample (426 primary events): holdout metrics from code/run_models.py.",
             fixture="synthetic_model_comparison_metrics.csv",
         ),
         DatasetSpec(
@@ -177,7 +177,7 @@ DATASETS = {
                 "data_status",
             ),
             default_status=SYNTHETIC,
-            description="Proposed: holdout_predictions frame from the helper.",
+            description="Run 1 holdout predictions from code/run_models.py.",
             fixture="synthetic_holdout_predictions.csv",
         ),
         DatasetSpec(
@@ -205,10 +205,10 @@ DATASETS = {
             key="variables",
             label="Variable dictionary",
             owner="Cammy (analysis plan)",
-            path="outputs/final_dataset_variables.csv",
+            path="outputs/model_variables.csv",
             required_columns=("variable", "group", "definition", "planned_source"),
             default_status=REFERENCE,
-            description="Name, definition, source and model run for every variable.",
+            description="Outcome and the 15 Run 1-3 predictors as fitted (specs_tried.md §4, Amendment 5).",
         ),
         DatasetSpec(
             key="model_runs",
@@ -222,7 +222,7 @@ DATASETS = {
         ),
         DatasetSpec(
             key="model_coefficients",
-            label="Checkpoint model coefficients",
+            label="Model coefficients, Runs 1-3",
             owner="Cammy (statistics)",
             path="outputs/model_coefficients.csv",
             required_columns=("run", "variable", "coef_per_sd", "ci_low", "ci_high", "data_status"),
@@ -231,7 +231,7 @@ DATASETS = {
         ),
         DatasetSpec(
             key="run_predictions",
-            label="Checkpoint holdout predictions",
+            label="Holdout predictions, Runs 1-3",
             owner="Cammy (statistics)",
             path="outputs/run_predictions.csv",
             required_columns=("event_id", "actual", "pred_run1", "pred_run3", "data_status"),

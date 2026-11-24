@@ -1,6 +1,29 @@
 # Project status
 
-## Current direction
+## Current status (2026-11-23)
+
+- **Question:** do dictionary text measures (Run 2) and LLM-scored variables
+  (Run 3) explain and predict CAR[0,1] beyond five fundamentals (Run 1)?
+- **Primary outcome:** CAR[0,1] (easy_es, Fama–French 5). The 20-session
+  ETF-proxy return is secondary and not computed for the cohort.
+- **Data:**
+  - cohort of 499 events (`outputs/q2_2026_cohort.csv`);
+  - course-provided Capital IQ transcripts, kept local, with 474 matched;
+  - LLM scores from Gemma 4, run by the course lead on his own computer
+    (Amendment 5).
+- **Results (`specs_tried.md` §8, runs 12–19):** both language blocks are
+  jointly significant in-sample. On the 2-week holdout, both make
+  predictions worse, so the language variables are **not supported**.
+  - The 255-session estimation window gives the same answer.
+  - Dashboard: https://team-magic-pead.streamlit.app
+- **Open:** an optional second scoring run of 30 calls, for reliability
+  (`inputs/llm_reliability_sample_ids.csv`).
+
+Everything below is the project history before 2026-11-19, kept for the
+record. Where it differs from the summary above, the summary and
+`specs_tried.md` govern.
+
+## Earlier direction (history)
 
 The research question is now whether earnings-call language adds predictive
 value beyond EPS surprise and the immediate announcement reaction—not whether
@@ -20,8 +43,9 @@ The 503-stock roster has been archived at
 point-in-time roster, but is not an official S&P file; the source and this
 limitation are recorded in each row.
 
-The primary outcome is 20-session cumulative abnormal return from an
-ETF-proxy three-factor model, measured after and excluding the separately
+*(Superseded: CAR[0,1] became the primary outcome; see `specs_tried.md` §3.)*
+The original primary outcome was the 20-session cumulative abnormal return
+from an ETF-proxy three-factor model, measured after and excluding the separately
 reported announcement-reaction session. Official Kenneth French factors lag recent
 events, so the provisional daily proxies are SPY minus BIL for market excess
 return, IWM minus SPY for size, and IWD minus IWF for value. These are
@@ -254,7 +278,7 @@ rows match the manifest one-to-one. The 20 fictional transcript events have
 zero matches to those real events, as expected. The final cohort dashboard
 output has not been built from these checkpoint files.
 
-## Next actions
+## Next actions (as of 2026-11-13; superseded by the current status above)
 
 1. Ask the course lead/library to check FactSet Academic access and transcript
    reuse rights; alternatively request written permission from a provider.

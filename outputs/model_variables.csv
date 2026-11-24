@@ -1,0 +1,20 @@
+variable,group,first_used_in_run,definition,planned_source,units
+event_id,Key,,Unique ID for one company-quarter earnings call.,outputs/q2_2026_cohort.csv,text
+car_0_1_pct,Outcome (Y),,"PRIMARY OUTCOME. Abnormal return on day 0 plus day 1 (easy_es, Fama-French 5).",outputs/q2_2026_cohort.csv,%
+car_0_1_pct_255,Outcome (robustness),,"CAR[0,1] with a true 255-session estimation window (Amendment 4).",outputs/q2_2026_car_255.csv,%
+eps_surprise_pct,Run 1: fundamentals,1,(Actual - consensus) / |consensus| x 100; winsorized 1st/99th.,Yahoo Finance (cohort),%
+log_market_cap,Run 1: fundamentals,1,"Log market cap, day before the call.",Yahoo Finance (cohort),log $
+price_to_book,Run 1: fundamentals,1,Price-to-book; winsorized 1st/99th.,Yahoo Finance (cohort),x
+return_52w_pct,Run 1: fundamentals,1,52-week price change to day -1 (spec name price_change_52w_pct).,Yahoo Finance (cohort),%
+beta_252d,Run 1: fundamentals,1,Beta from 252 sessions of stock and SPY returns ending day -1 (spec name beta).,Yahoo Finance (cohort),x
+transcript_sentiment,Run 2: dictionary text,2,"Loughran-McDonald (positive - negative) / words, whole call.","Capital IQ transcripts, local",proportion
+management_prepared_sentiment,Run 2: dictionary text,2,"Same, executives' prepared remarks only.","Capital IQ transcripts, local",proportion
+analyst_question_sentiment,Run 2: dictionary text,2,"Same, analysts' questions only.","Capital IQ transcripts, local",proportion
+uncertainty_word_proportion,Run 2: dictionary text,2,"Loughran-McDonald uncertainty words / words, whole call.","Capital IQ transcripts, local",proportion
+congratulations_mentioned,Run 2: dictionary text,2,1 if an analyst question says 'congratulations' or 'congrats'.,"Capital IQ transcripts, local",0/1
+guidance_specificity,Run 3: AI-scored,3,"Forward guidance absent (0), qualitative (1) or numeric (2).","Gemma 4, prompt v2.0 (local run)",0-2
+guidance_revision,Run 3: AI-scored,3,"Prior guidance cut (-1), kept (0) or raised (+1); null if nothing to compare (dropped in primary; own category in robustness).","Gemma 4, prompt v2.0 (local run)",-1/0/1
+qa_evasiveness,Run 3: AI-scored,3,How often management fails to answer analysts directly.,"Gemma 4, prompt v2.0 (local run)",0-2
+one_off_attribution,Run 3: AI-scored,3,"Results blamed (-1) or credited (+1) to one-time factors, or neither (0).","Gemma 4, prompt v2.0 (local run)",-1/0/1
+analyst_concern_focus,Run 3: AI-scored,3,How much analysts' questions focus on one problem.,"Gemma 4, prompt v2.0 (local run)",0-2
+sentiment_gap,Exploratory (not in models),,"Prepared-remarks minus analyst-question sentiment; exactly collinear with Run 2, so exploratory only (run 16).",Derived,proportion

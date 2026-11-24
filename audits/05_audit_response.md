@@ -70,10 +70,10 @@ Team Magic. This responds to `audits/04_instructor_audit.md` (audited commit
   but add essentially nothing out-of-sample. The all-event robustness run
   is nearly identical.
 
-**Disclosed limitation.** Under the pre-specified 60/40 split, the holdout
-spans only 4 calendar weeks of day 0. The week-block bootstrap therefore
-resamples 4 blocks, and its intervals are coarse. This will also apply to
-the Run 2 vs 1 and Run 3 vs 2 comparisons.
+**Disclosed limitation.** Under the pre-specified 60/40 split, the Run 1
+holdout spans only 4 calendar weeks of day 0, so the week-block bootstrap
+resamples 4 blocks and its intervals are coarse. For Runs 1–3, the holdout
+spans only 2 weeks, because the transcripts end 2026-08-07.
 
 **To rerun:**
 
@@ -111,15 +111,15 @@ IQ transcripts the course provided on 2026-11-19.
   - 21 events matched only by fiscal-period end, because their cohort
     earnings date is an earlier 8-K. Their `day0_session` is checked before
     Runs 2–3.
-- **Leakage:** Claude Haiku, Sonnet and Opus 5.5 all have a published June
-  2026 training-data cutoff. The Run 2–3 sample, and the nested Run 1 refit,
-  is therefore limited to the **395** matched calls held after 2026-06-30.
-- **Route:** EDSL runs locally with remote inference and the remote cache
-  disabled, and sends directly to Anthropic under the course's enterprise
-  account, as you directed.
-- **Blocker:** our Claude Console login shows only a personal organization,
-  so we have asked you how to get an API key under the enterprise account.
-  No real transcript has been sent.
+- **Leakage:** the Run 2–3 sample, and the nested Run 1 refit, is limited
+  to the **395** matched calls held after 2026-06-30. This was fixed in
+  Amendment 2 for the Claude models' June 2026 cutoff, before any scoring.
+  The scores actually used come from Gemma 4, whose training data ends in
+  January 2025 (Amendment 5), so every cohort call is after its cutoff.
+- **Route (as done):** you scored the calls on your own computer through
+  EDSL, with every remote feature off (PR #22,
+  `docs/LOCAL_LLM_INSTRUCTOR_RUN.md`). We never sent a real transcript to
+  any service; our personal API key was used only on invented calls.
 - **Day-0 check** (Amendment 3, `7306976`; `docs/DAY0_TRANSCRIPT_CHECK.md`):
   - 453 matched events have a call consistent with their `day0_session`.
   - 21 have a cohort day 0 that is an earlier 8-K, 3–27 trading days
@@ -133,8 +133,9 @@ IQ transcripts the course provided on 2026-11-19.
   - `code/run_nested_models.py` (`6857eaf`) implements the full nested
     comparison: block Wald tests, the week-block bootstrap of ΔMSE and the
     shuffled-score placebo. Its tests use a planted effect.
-  - It runs as soon as the LLM scores exist. The expected common sample is
-    336 primary events.
+  - It ran on 2026-11-23 (runs 12–15). Before LLM missingness the common
+    sample was 336 primary events, as predicted. After the 31 null
+    `guidance_revision` calls are dropped, it is **304**.
 - **Prompt check:** prompt v2.0 has been checked, unchanged, on the 8-call
   synthetic validation set (runs 6–8):
   - Sonnet 5.5 agreed with 47 of 48 reference labels;

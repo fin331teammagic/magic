@@ -1,5 +1,15 @@
 # Transcript-feature checkpoint
 
+> **Status, 2026-11-23: scoring is done.** The course lead scored all 474
+> matched calls on his own computer with Gemma 4 (`docs/LOCAL_LLM_INSTRUCTOR_RUN.md`,
+> PR #22), and the team adopted those scores in `specs_tried.md` Amendment 5.
+> Results are in §8 (runs 12–19). The enterprise-key route, the Sonnet
+> sign-off and the guidance-null decision below are therefore **superseded**:
+> no key was used, Sonnet did not score real calls, and nulls are dropped in
+> the primary run and kept as their own category in a robustness run. The
+> rest of this file is kept as the record of how the inputs and prompt were
+> built.
+
 ## Scope and safeguards
 
 This is a low-cost workflow check, not the final research scoring protocol or
