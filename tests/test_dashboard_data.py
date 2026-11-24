@@ -336,6 +336,7 @@ class AppSmokeTests(unittest.TestCase):
         # the pre-specified answer and no model view carries a synthetic banner.
         app = self._run(False)
         self.assertTrue(any("Answer (pre-specified test)" in i.value for i in app.info))
+        self.assertTrue(any("Exploratory, not pre-specified" in w.value for w in app.warning))
         self.assertFalse(any("SYNTHETIC" in e.value for e in app.error), [e.value[:80] for e in app.error])
         # The pilot banner shows only while the real cohort file is absent.
         has_cohort = (ROOT / "outputs" / "q2_2026_cohort.csv").exists()

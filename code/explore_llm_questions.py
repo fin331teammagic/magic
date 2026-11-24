@@ -315,6 +315,8 @@ def incremental(frame, base_columns, added, train_mask, placebo_draws, seed=rm.S
         "coef": full_fit.params[added[0]], "std_error": full_fit.bse[added[0]],
         "p_value": full_fit.pvalues[added[0]],
         "coef_per_sd": full_fit.params[added[0]] * x_full[added[0]].std(ddof=1),
+        "ci_low_per_sd": full_fit.conf_int().loc[added[0], 0] * x_full[added[0]].std(ddof=1),
+        "ci_high_per_sd": full_fit.conf_int().loc[added[0], 1] * x_full[added[0]].std(ddof=1),
         "block_wald_p": float(wald.pvalue),
         "in_sample_r2_base": base_fit.rsquared, "in_sample_r2": full_fit.rsquared,
         "delta_r2": full_fit.rsquared - base_fit.rsquared,
@@ -416,7 +418,7 @@ def block(model, frame, valid, base, base_columns, cutoff, placebo_draws):
         added.append(name)
     joined = joined.reset_index(drop=True)
     stats = incremental(joined, base_columns, added, joined["day0"] <= cutoff, placebo_draws)
-    for key in ("coef", "std_error", "p_value", "coef_per_sd"):
+    for key in ("coef", "std_error", "p_value", "coef_per_sd", "ci_low_per_sd", "ci_high_per_sd"):
         stats.pop(key)
     return {"model": model, "n_questions": sum(not a.endswith("__not_discussed") for a in added),
             "n_added_columns": len(added), "added": " ".join(added), **stats}
