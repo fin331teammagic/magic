@@ -401,36 +401,50 @@ Adds one robustness row to §6. It does not change the primary analysis.
   table. The primary outcome stays easy_es `car_0_1_pct`.
 - **Status:** not yet run.
 
-**Amendment 5 · DRAFT, not yet adopted · 2026-11-23 · Abby · Run 3 scores.**
-To be finalized with the team's answers **before** any Run 2 or Run 3
-model fit. No outcome value has been read for the Run 2–3 sample.
+**Amendment 5 · 2026-11-23 · Abby, with Cammy's sign-off · Run 3 scores.**
+Adopted before any Run 2 or Run 3 model fit. No outcome value had been read
+for the Run 2–3 sample.
 
-- **Scores used for Run 3:** Prof. Bowen's local run (run log row 10),
-  replacing the proposed Claude Sonnet 5.5. The enterprise API route in
-  Amendment 2 was not used, and no transcript was sent to any outside
-  service. **[TEAM: confirm]**
-- **Leakage:** Gemma 4's pre-training data is recorded as ending in
-  January 2025 (check Google's model card before citing it). The primary
-  sample stays the 395 calls after 2026-06-30, as in Amendment 2, so the
-  sample doesn't change after the scores are seen. Re-running on all 474
-  calls is an added robustness row. **[TEAM: confirm]**
-- **Parse failures:** CFG (after the cutoff) and PAYX did not parse after two
-  retries (§4). They are missing and are dropped by complete case.
-- **`guidance_revision = null`** (31 of 335 primary events; the call has
-  nothing to compare with): **[TEAM: choose]**
-  - proposed: keep §2's complete-case rule for the primary result
-    (304 primary events), and add a robustness row that codes null as 0
-    plus a `no_prior_guidance` indicator (335 events);
-  - alternative: make the indicator version primary.
-- **`guidance_specificity` barely varies:** 298 of 304 primary events
-  score 2 (`outputs/run3_feature_distribution.csv`). It stays in Run 3 as
-  pre-specified. Its coefficient rests on 6 events and is reported with
+- **Run 3 scores:** Prof. Bowen's local run (run log row 10), replacing the
+  proposed Claude Sonnet 5.5.
+  - The model was Gemma 4 26B-A4B-it.
+  - The enterprise API route in Amendment 2 was not used.
+  - No transcript was sent to any outside service.
+- **Rubric check on Gemma** (§4, Amendment 2): it was run. On the 8-call
+  synthetic validation set, all 8 calls agree with the reference on every
+  field. The 12-call development set parsed fully, with one disagreement
+  (`docs/LOCAL_LLM_INSTRUCTOR_RUN.md`).
+  - These are single temperature-0 runs.
+  - No repeated-sampling or second-model reliability check was done on
+    real calls.
+- **Leakage:** Gemma 4's training data runs to January 2025. This is
+  according to NVIDIA's Gemma 4 model card and a Google staff reply on the
+  Google AI developer forum, checked 2026-11-23. Google's own model card
+  page did not state it in the search results, so the date is reported
+  with that caveat.
+  - All cohort calls (April–August 2026) are after it.
+  - The primary sample stays the 395 calls after 2026-06-30 (Amendment 2),
+    so the sample does not change after the scores were seen.
+  - Robustness row `primary_all_calls` uses all matched calls
+    (`..._gemma4_all474.csv`).
+- **Parse failures:** CFG (after the cutoff) and PAYX failed after two
+  retries (§4). They are missing and dropped by complete case.
+- **`guidance_revision = null`** (31 of 335 primary events: the call has
+  nothing to compare with):
+  - **primary:** §2's complete-case rule, 304 primary events;
+  - **robustness row `primary_null_category`:** null is coded 0, and a
+    `no_prior_guidance` indicator is added to the Run 3 block (335 events).
+- **`guidance_specificity` barely varies:** 298 of 304 primary events score 2
+  (`outputs/run3_feature_distribution.csv`). It stays in Run 3 as
+  pre-specified, and its coefficient (resting on 6 events) is reported with
   that caveat.
-- **Overlap with Runs 1–2** (Spearman, 304 events): no Run 3 variable has
-  a correlation above 0.31 in absolute value with EPS surprise or any Run 2
-  variable (`outputs/run3_feature_correlations.csv`). The LLM variables are
-  not re-measuring the Run 1–2 predictors.
+- **Overlap with Runs 1–2** (Spearman, 304 events): no Run 3 variable
+  correlates above 0.31 in absolute value with EPS surprise or with any
+  Run 2 variable (`outputs/run3_feature_correlations.csv`).
 - **Sentiment gap** (management prepared-remarks sentiment minus
-  analyst-question sentiment): **[TEAM: choose]** add it to Run 2 now, or
-  report it only afterwards as exploratory. Run 2 already contains both
-  inputs, so in a linear model the gap adds nothing to Run 2's fit.
+  analyst-question sentiment): not in the official runs. Run 2 already
+  contains both of its inputs, so it would be exactly collinear. It is
+  reported only afterwards, labeled exploratory.
+- **Code:** `code/run_nested_models.py` gains the two robustness variants
+  above. The `primary` and `all_events` rows are unchanged from the tested
+  pre-specified version.

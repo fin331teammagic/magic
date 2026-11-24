@@ -52,6 +52,22 @@ class RunNestedModelsTest(unittest.TestCase):
         self.assertEqual(len(frame), 296)
         self.assertEqual(flow[-1]["n"], len(frame))
 
+    def test_null_category_keeps_null_rows_with_an_indicator(self):
+        frame, _ = nm.load_sample(*self.paths, primary_only=False, null_category=True)
+        self.assertEqual(len(frame), 297)  # SYN003 (null guidance) is kept
+        row = frame.set_index("event_id").loc["SYN003_2026-06-30"]
+        self.assertEqual(row["guidance_revision"], 0)
+        self.assertEqual(row[nm.NULL_INDICATOR], 1)
+        _, coefs, _, _ = nm.run_sample(self.paths, primary_only=False, placebo_draws=5,
+                                       null_category=True, sample="x")
+        self.assertIn(nm.NULL_INDICATOR, {c["variable"] for c in coefs if c["run"] == 3})
+        self.assertNotIn(nm.NULL_INDICATOR, {c["variable"] for c in coefs if c["run"] == 2})
+
+    def test_no_cutoff_filter_keeps_pre_cutoff_calls(self):
+        frame, _ = nm.load_sample(*self.paths, primary_only=False, cutoff_filter=False)
+        self.assertIn("SYN000_2026-06-30", set(frame["event_id"]))
+        self.assertEqual(len(frame), 297)
+
     def test_planted_run3_effect_is_detected_and_run2_noise_is_not(self):
         runs, coefs, preds, _ = nm.run_sample(self.paths, primary_only=False, placebo_draws=50)
         by_run = {r["run"]: r for r in runs}
