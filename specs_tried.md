@@ -563,6 +563,14 @@ the pre-specified answer (runs 12–19: not supported).
   5. **All questions as one block:** nulls coded 0 plus an indicator. With
      about 20 questions on about 300 events, the in-sample fit is expected
      to overfit.
+     - The primary sample has only 21 day-0 clusters. A clustered Wald test
+       cannot test as many restrictions as there are clusters minus one.
+     - When the block has that many columns, the clustered p is left blank.
+       An unclustered F-test p is reported instead, labeled as too
+       optimistic.
+     - Found on 2026-11-24 in a rehearsal on invented scores, before any
+       v3.0 score was received. The 20-question block gave clustered p of
+       0.0000 or 1.0000 on random data.
 - **Sample:** the base sample of Amendment 3 (336 primary events). The
   holdout split date (day 0 through 2026-07-30) is fixed once on that sample.
 - **Validation:** each returned value is checked against the v3.0 rubric. A

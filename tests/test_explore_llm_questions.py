@@ -78,6 +78,27 @@ class ExploreLlmQuestionsTest(unittest.TestCase):
         self.assertNotIn(self.failed_id, valid[PLANTED])
         self.assertIn(self.failed_id, valid["outlook_vs_quarter"])
 
+    def test_file_report_records_scoring_details(self):
+        _, _, report = ex.load_model(self.a_files)
+        group_b = next(r for r in report if "pricing_power" in r["variables"])
+        self.assertEqual(group_b["parse_errors"], 1)
+        self.assertEqual(group_b["parse_error_ids"], self.failed_id)
+        self.assertEqual(group_b["rows"], 300)
+        self.assertEqual(group_b["valid_rows"], 299)
+
+    def test_clustered_wald_withheld_with_too_few_clusters(self):
+        rng = np.random.default_rng(3)
+        n = 120
+        frame = pd.DataFrame({c: rng.normal(size=n) for c in ["x1", "x2", "a", "b", "c", "d"]})
+        frame["car_0_1_pct"] = rng.normal(size=n)
+        frame["eps_surprise_pct"] = frame["price_to_book"] = rng.normal(size=n)  # winsorized columns
+        frame["day0"] = pd.to_datetime("2026-07-01") + pd.to_timedelta(np.arange(n) % 4, unit="D")
+        out = ex.incremental(frame, ["x1", "x2"], ["a", "b", "c", "d"],
+                             frame["day0"] <= "2026-07-02", placebo_draws=0)
+        self.assertTrue(np.isnan(out["block_wald_p"]))
+        self.assertIn("4 day-0 clusters", out["block_wald_note"])
+        self.assertTrue(0 <= out["block_f_p_unclustered"] <= 1)
+
     def test_value_outside_rubric_is_rejected(self):
         bad = self.b.copy()
         bad.loc[0, "ai_emphasis"] = 3
@@ -123,6 +144,11 @@ class ExploreLlmQuestionsTest(unittest.TestCase):
         block = out["block"].set_index("model")
         self.assertEqual(block.loc["A", "n_questions"], 20)
         self.assertLess(block.loc["A", "n"], block.loc["B", "n"])
+        # More restrictions than day-0 clusters: the clustered Wald p is withheld, not reported.
+        if block.loc["A", "n_added_columns"] >= block.loc["A", "n_clusters"] - 1:
+            self.assertTrue(np.isnan(block.loc["A", "block_wald_p"]))
+            self.assertIn("undefined", block.loc["A", "block_wald_note"])
+        self.assertTrue(block["block_f_p_unclustered"].between(0, 1).all())
         self.assertTrue((out["one_at_a_time"]["status"] == "EXPLORATORY (not pre-specified)").all())
 
     def test_run3_baseline_needs_reference(self):

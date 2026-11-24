@@ -46,8 +46,9 @@ def load_screen(name: str, root: Path = ROOT) -> dict[str, pd.DataFrame | None]:
 def proposed_leads(single: pd.DataFrame) -> pd.DataFrame:
     """One row per model and question (nulls dropped), with the Amendment 6 lead checks.
 
-    - ``same_direction``: the coefficient has the same sign for at least
-      ``LEAD_MIN_MODELS`` real models (the consensus row is not counted). With
+    - ``same_direction``: at least ``LEAD_MIN_MODELS`` real models (this one
+      included; the consensus row is not counted) have the same sign as this
+      row's coefficient. With
       fewer real models than that, it cannot be checked and is False.
     - ``survives_multiple_testing``: BH q within the model below ``LEAD_Q_MAX``.
     - ``helps_holdout``: holdout MSE gain above 0 and placebo share below
@@ -60,9 +61,20 @@ def proposed_leads(single: pd.DataFrame) -> pd.DataFrame:
             rows[column] = float("nan")
     real = rows[rows["model"] != CONSENSUS]
     n_models = real["model"].nunique()
-    signs = real.assign(sign=real["coef"].apply(lambda c: (c > 0) - (c < 0) if pd.notna(c) else 0))
-    agreeing = signs.groupby("variable")["sign"].agg(lambda s: max((s > 0).sum(), (s < 0).sum()))
-    rows["models_same_direction"] = rows["variable"].map(agreeing).fillna(0).astype(int)
+    def sign(c):
+        return (c > 0) - (c < 0) if pd.notna(c) else 0
+
+    real_signs = real.assign(sign=real["coef"].apply(sign))[["variable", "model", "sign"]]
+
+    def same_as_row(row):
+        """Real models whose sign matches this row's own sign (this model included)."""
+        own = sign(row["coef"])
+        if own == 0:
+            return 0
+        others = real_signs[(real_signs["variable"] == row["variable"])]
+        return int((others["sign"] == own).sum())
+
+    rows["models_same_direction"] = rows.apply(same_as_row, axis=1) if len(rows) else 0
     rows["n_models"] = n_models
     rows["same_direction"] = (n_models >= LEAD_MIN_MODELS) & (rows["models_same_direction"] >= LEAD_MIN_MODELS)
     rows["survives_multiple_testing"] = rows["bh_q_within_model"] < LEAD_Q_MAX

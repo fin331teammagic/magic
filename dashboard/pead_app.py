@@ -576,11 +576,18 @@ with explore_tab:
                 })
             if ex_block is not None and not ex_block.empty:
                 st.markdown("#### All questions together")
-                st.dataframe(ex_block[["model", "n_questions", "n", "delta_r2", "block_wald_p", "delta_mse",
-                                    "placebo_share"]], hide_index=True, column_config={
+                st.dataframe(ex_block[[c for c in ("model", "n_questions", "n", "delta_r2", "block_wald_p",
+                                                   "block_f_p_unclustered", "delta_mse", "placebo_share")
+                                       if c in ex_block]], hide_index=True, column_config={
                     "model": "Model", "n_questions": "Questions", "n": "Events",
                     "delta_r2": st.column_config.NumberColumn("ΔR² in-sample", format="%.3f"),
-                    "block_wald_p": st.column_config.NumberColumn("Block Wald p", format="%.4f"),
+                    "block_wald_p": st.column_config.NumberColumn(
+                        "Block Wald p (clustered)", format="%.4f",
+                        help="Blank when the block has more columns than day-0 clusters allow; the "
+                             "clustered test is undefined then."),
+                    "block_f_p_unclustered": st.column_config.NumberColumn(
+                        "Block F p (not clustered)", format="%.4f",
+                        help="Ignores that calls on the same day share news, so it is too optimistic."),
                     "delta_mse": st.column_config.NumberColumn("Holdout MSE gain", format="%.2f"),
                     "placebo_share": st.column_config.NumberColumn("Placebo share", format="%.3f")})
                 st.caption("Nulls are coded 0 with a 'not discussed' indicator here, so the sample does not "

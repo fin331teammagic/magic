@@ -36,6 +36,14 @@ class ProposedLeadsTest(unittest.TestCase):
         self.assertFalse(leads.loc[("A", "noholdout"), "proposed_lead"])  # holdout worse
         self.assertEqual(leads.loc[("A", "good"), "models_same_direction"], 2)  # consensus not counted
 
+    def test_row_against_the_majority_fails_direction(self):
+        single = pd.DataFrame([row("A", "x", 1.0, 0.01, 1.0, 0.01), row("B", "x", -1.0, 0.01, 1.0, 0.01),
+                               row("C", "x", -1.0, 0.01, 1.0, 0.01)])
+        leads = ex.proposed_leads(single).set_index("model")
+        self.assertFalse(leads.loc["A", "same_direction"])
+        self.assertTrue(leads.loc["B", "same_direction"])
+        self.assertEqual(leads.loc["A", "models_same_direction"], 1)
+
     def test_one_model_never_passes_direction(self):
         single = pd.DataFrame([row("A", "x", 1.0, 0.001, 1.0, 0.0)])
         self.assertFalse(ex.proposed_leads(single)["proposed_lead"].any())

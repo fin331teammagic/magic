@@ -106,8 +106,30 @@ REFERENCE = ["eps_surprise_pct", *nm.RUN2]
 
 # ---------------------------------------------------------------- loading
 
-def read_score_file(path):
-    """Valid scored rows of one file: ``event_id`` plus the rubric variables it has."""
+def describe_file(raw):
+    """Scoring details stamped in a score file, for the write-up (no transcript text)."""
+    def values(column):
+        if column not in raw:
+            return ""
+        return " | ".join(sorted(raw[column].dropna().astype(str).unique()))
+    run_at = pd.to_datetime(raw["run_at_utc"], errors="coerce", utc=True) if "run_at_utc" in raw else None
+    return {
+        "model_stamp": values("model"), "prompt_version": values("prompt_version"),
+        "prompt_sha256": values("prompt_sha256"), "edsl_version": values("edsl_version"),
+        "run_from_utc": run_at.min().isoformat() if run_at is not None and run_at.notna().any() else "",
+        "run_to_utc": run_at.max().isoformat() if run_at is not None and run_at.notna().any() else "",
+        "parse_errors": int((raw["parse_status"] != "ok").sum()) if "parse_status" in raw else "",
+        "parse_error_ids": " ".join(raw.loc[raw["parse_status"] != "ok", "id"].astype(str))
+                           if "parse_status" in raw else "",
+        "incomplete_transcript": int((raw["status"] == "incomplete_transcript").sum()) if "status" in raw else "",
+    }
+
+
+def read_score_file(path, details=False):
+    """Valid scored rows of one file: ``event_id`` plus the rubric variables it has.
+
+    Returns (frame, number of rows), or (frame, details dict) with ``details=True``.
+    """
     raw = pd.read_csv(path, na_values=["null"], keep_default_na=True)
     if "id" not in raw:
         raise ValueError(f"{path}: no 'id' column.")
@@ -132,7 +154,7 @@ def read_score_file(path):
             raise ValueError(f"{path}: {name} is null for {int(values.isna().sum())} scored rows, "
                              "but the rubric has no null option.")
         frame[name] = values.astype(float)
-    return frame, len(raw)
+    return frame, ({"rows": len(raw)} | describe_file(raw) if details else len(raw))
 
 
 def load_model(paths):
@@ -144,14 +166,14 @@ def load_model(paths):
     """
     merged, report, seen, valid = None, [], {}, {}
     for path in paths:
-        frame, n_rows = read_score_file(path)
+        frame, file_details = read_score_file(path, details=True)
         for name in frame.columns.drop("event_id"):
             if name in seen:
                 raise ValueError(f"{name} appears in both {seen[name]} and {path}.")
             seen[name] = path
             valid[name] = set(frame["event_id"])
-        report.append({"file": str(path), "rows": n_rows, "valid_rows": len(frame),
-                       "variables": " ".join(frame.columns.drop("event_id"))})
+        report.append({"file": str(path), "valid_rows": len(frame),
+                       "variables": " ".join(frame.columns.drop("event_id")), **file_details})
         merged = frame if merged is None else merged.merge(frame, on="event_id", how="outer",
                                                            validate="one_to_one")
     return merged, valid, report
@@ -309,15 +331,25 @@ def incremental(frame, base_columns, added, train_mask, placebo_draws, seed=rm.S
     restriction = np.zeros((len(added), len(names)))
     for i, name in enumerate(added):
         restriction[i, names.index(name)] = 1
-    wald = full_fit.f_test(restriction)
+    n_clusters = int(frame["day0"].nunique())
+    # A clustered Wald test cannot test more restrictions than clusters - 1:
+    # the clustered covariance is rank-deficient and its p-value is meaningless.
+    if len(added) < n_clusters - 1:
+        wald_p, wald_note = float(full_fit.f_test(restriction).pvalue), ""
+    else:
+        wald_p = np.nan
+        wald_note = (f"{len(added)} restrictions vs {n_clusters} day-0 clusters: clustered Wald "
+                     "undefined; see block_f_p_unclustered")
+    unclustered, _ = nm.fit(frame, columns, full_bounds, clustered=False)
     out = {
-        "n": int(full_fit.nobs), "n_clusters": int(frame["day0"].nunique()),
+        "n": int(full_fit.nobs), "n_clusters": n_clusters,
         "coef": full_fit.params[added[0]], "std_error": full_fit.bse[added[0]],
         "p_value": full_fit.pvalues[added[0]],
         "coef_per_sd": full_fit.params[added[0]] * x_full[added[0]].std(ddof=1),
         "ci_low_per_sd": full_fit.conf_int().loc[added[0], 0] * x_full[added[0]].std(ddof=1),
         "ci_high_per_sd": full_fit.conf_int().loc[added[0], 1] * x_full[added[0]].std(ddof=1),
-        "block_wald_p": float(wald.pvalue),
+        "block_wald_p": wald_p, "block_wald_note": wald_note,
+        "block_f_p_unclustered": float(unclustered.f_test(restriction).pvalue),
         "in_sample_r2_base": base_fit.rsquared, "in_sample_r2": full_fit.rsquared,
         "delta_r2": full_fit.rsquared - base_fit.rsquared,
         "delta_adj_r2": full_fit.rsquared_adj - base_fit.rsquared_adj,
@@ -494,7 +526,8 @@ def main(argv=None):
             print(view[[c for c in columns if c in view]].round(4).to_string(index=False))
     for row in blocks:
         print(f"[{row['model']}] all {row['n_questions']} questions as one block: n={row['n']} "
-              f"dR2={row['delta_r2']:.3f} Wald p={row['block_wald_p']:.4f} "
+              f"dR2={row['delta_r2']:.3f} clustered Wald p={row['block_wald_p']:.4f} "
+              f"(unclustered F p={row['block_f_p_unclustered']:.4f}) "
               f"dMSE={row['delta_mse']:.3f} placebo={row['placebo_share']:.3f}")
     print(f"Wrote {out}/ (EXPLORATORY).")
     return 0
