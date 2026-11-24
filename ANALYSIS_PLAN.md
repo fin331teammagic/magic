@@ -8,7 +8,7 @@ This plan sets out how we will test whether earnings-call language helps explain
 
 For this checkpoint, the outcome (Y) is **CAR[0,1]**: the cumulative abnormal return over the earnings call day and the following day, relative to what a factor model predicts. It is produced by the event study package from the list of tickers and call dates.
 
-This is distinct from the project's final outcome, the cumulative abnormal return over the 20 trading sessions after the announcement-reaction session, which the full analysis will use. At this checkpoint, CAR[0,1] captures the immediate reaction around the call.
+CAR[0,1] is the **primary outcome** of the study (`specs_tried.md` §3, frozen 2026-11-22). The cumulative abnormal return over the 20 trading sessions after the announcement-reaction session is a **secondary** outcome; it is not computed for the Q2 2026 cohort, and no reported result uses it.
 
 ## Sample and data
 

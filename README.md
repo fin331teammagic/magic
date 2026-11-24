@@ -322,6 +322,29 @@ IDs do not match real events; no real transcript-feature merge is available.
 - `tests/test_gus_event_data.py` — offline tests for IDs, joins, day-0
   timing, point-in-time rules, CAR[0,1], and missing values.
 
+## Reproduce the results
+
+Python 3.12 with `requirements-lock.txt` (setup below). Every model result
+reads committed files in `outputs/`; nothing is re-downloaded.
+
+```bash
+python code/run_models.py                      # Run 1 on its full sample (runs 4-5)
+python code/run_nested_models.py \
+  --llm-scores outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv \
+  --llm-scores-all outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_all474.csv
+                                               # Runs 1-3 + robustness (runs 12-15)
+python code/describe_run3_features.py \
+  --llm-scores outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv
+python code/exploratory_sentiment_gap.py \
+  --llm-scores outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv
+python -m unittest discover -s tests
+```
+
+Rebuilding the inputs needs the licensed Capital IQ transcripts in
+git-ignored `restricted_data/`. That covers
+`code/build_transcript_inputs.py`, `code/build_dictionary_features.py` and
+the LLM scoring (`docs/LOCAL_LLM_INSTRUCTOR_RUN.md`).
+
 ## Run the pilot
 
 Run commands from the repository root with **Python 3.12** (`.python-version`).

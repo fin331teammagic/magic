@@ -159,9 +159,9 @@ with st.sidebar:
 # --------------------------------------------------------------------------
 st.title("Earnings Calls and Post-Earnings Returns")
 st.markdown(
-    "<p class='lede'>Do signals from earnings-call language help predict a stock's "
-    "return over the 20 trading sessions after an earnings announcement, "
-    "<b>beyond</b> what the EPS surprise and the day-of reaction already tell us?</p>",
+    "<p class='lede'>Do variables measured from the earnings call, first with dictionary text "
+    "analysis and then with an LLM, explain and predict the stock's abnormal return around the "
+    "call (<b>CAR[0,1]</b>) <b>beyond</b> the EPS surprise and other standard fundamentals?</p>",
     unsafe_allow_html=True,
 )
 if events_ds is pilot:
@@ -181,6 +181,57 @@ def count_llm_scored(path=REPO_ROOT / "outputs/llm_scores_real/q2_2026_llm_score
 
 
 n_llm_scored = count_llm_scored()
+
+MODEL_VARIABLES = {
+    "eps_surprise_pct": "EPS surprise (%)",
+    "log_market_cap": "Log market cap",
+    "price_to_book": "Price-to-book",
+    "return_52w_pct": "52-week return (%)",
+    "beta_252d": "Beta",
+    "transcript_sentiment": "Sentiment, whole call",
+    "management_prepared_sentiment": "Sentiment, prepared remarks",
+    "analyst_question_sentiment": "Sentiment, analyst questions",
+    "uncertainty_word_proportion": "Uncertainty words",
+    "congratulations_mentioned": "Analyst said 'congratulations'",
+    "guidance_specificity": "AI: guidance specificity",
+    "guidance_revision": "AI: guidance revision",
+    "qa_evasiveness": "AI: Q&A evasiveness",
+    "one_off_attribution": "AI: one-off attribution",
+    "analyst_concern_focus": "AI: analyst concern focus",
+}
+# The correlation file uses the spec's names for two Run 1 variables.
+CORR_NAMES = {**MODEL_VARIABLES, "price_change_52w_pct": "52-week return (%)", "beta": "Beta"}
+
+
+@st.cache_data
+def real_model_frame():
+    """The Runs 1-3 primary sample, rebuilt with pandas from committed outputs.
+
+    Same filters as code/run_nested_models.py: primary timing, call after the
+    2026-06-30 cutoff, day 0 consistent with the call, parsed LLM scores, and
+    every variable present (complete case). Returns None if a file is missing.
+    """
+    out = REPO_ROOT / "outputs"
+    try:
+        cohort = pd.read_csv(out / "q2_2026_cohort.csv")
+        text = pd.read_csv(out / "q2_2026_dictionary_features.csv")
+        day0 = pd.read_csv(out / "q2_2026_day0_transcript_check.csv")[["event_id", "day0_check"]]
+        llm = pd.read_csv(out / "llm_scores_real" / "q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv")
+    except Exception:
+        return None
+    llm = llm[(llm["parse_status"] == "ok") & (llm["status"] == "scored")].rename(columns={"id": "event_id"})
+    run1 = ["eps_surprise_pct", "log_market_cap", "price_to_book", "return_52w_pct", "beta_252d"]
+    run2 = list(MODEL_VARIABLES)[5:10]
+    run3 = list(MODEL_VARIABLES)[10:15]
+    frame = (cohort[["event_id", "ticker", "day0_session", "primary_timing_sample", "car_0_1_pct"] + run1]
+             .merge(text[["event_id", "after_training_cutoff"] + run2], on="event_id", how="left")
+             .merge(day0, on="event_id", how="left")
+             .merge(llm[["event_id"] + run3], on="event_id", how="left"))
+    frame = frame[(frame["primary_timing_sample"] == True) & (frame["after_training_cutoff"] == True)  # noqa: E712
+                  & (frame["day0_check"] == "consistent_with_call")]
+    frame = frame.dropna(subset=["car_0_1_pct"] + run1 + run2 + run3)
+    return frame.drop(columns=["primary_timing_sample", "after_training_cutoff", "day0_check"]).reset_index(drop=True)
+
 
 SAMPLE_LABELS = {
     "primary": "Primary (304)",
@@ -399,46 +450,53 @@ with results_tab:
                                                              choice), width="stretch")
                 st.caption("Points on the dashed line are perfect predictions.")
 
-    if final_ds.available:
-        fd = final_ds.frame
+    model_frame = real_model_frame()
+    if model_frame is not None:
         st.divider()
-        if final_ds.status == SYNTHETIC:
-            st.error(
-                "**SYNTHETIC DATA BELOW: NOT RESEARCH RESULTS.** The variable explorer uses 500 invented "
-                "earnings calls (SYN001–SYN500) from `code/build_synthetic_final_dataset.py`, to show the layout. "
-                "The real results are above.", icon="🧪")
-        st.markdown("#### Explore one variable against the reaction (synthetic preview)")
-        numeric = [v for v in (vars_ds.frame["variable"] if vars_ds.available else fd.columns)
-                   if v in fd.columns and v not in ("car_0_1_pct", "car_final_20s_pct")
-                   and pd.api.types.is_numeric_dtype(fd[v])]
+        st.markdown("#### Explore one variable against the reaction (real data)")
+        st.caption("The {:,} primary events used in Runs 1–3: CAR[0,1] against each pre-specified "
+                   "predictor. These are raw associations, not the controlled estimates above.".format(
+                       len(model_frame)))
         e1, e2 = st.columns([3, 2], gap="large")
         with e1:
-            default = numeric.index("eps_surprise_pct") if "eps_surprise_pct" in numeric else 0
-            xvar = st.selectbox("Variable", numeric, index=default, format_func=lambda v: names.get(v, v))
-            st.altair_chart(charts.binned_relationship_chart(fd, xvar, names.get(xvar, xvar), "car_0_1_pct",
-                                                             "CAR[0,1] (%)"), width="stretch")
-            n_blank = int(fd[xvar].isna().sum())
-            if n_blank:
-                st.caption("{} calls have no value for this variable and are left out (not set to zero).".format(
-                    n_blank))
+            xvar = st.selectbox("Variable", list(MODEL_VARIABLES), index=0,
+                                format_func=lambda v: MODEL_VARIABLES[v], key="real_explore_var")
+            if model_frame[xvar].nunique() <= 5:
+                st.altair_chart(charts.group_mean_chart(
+                    model_frame.assign(**{xvar: model_frame[xvar].astype(int).astype(str)}),
+                    xvar, "car_0_1_pct", "CAR[0,1] (%)"), width="stretch")
+                counts = model_frame[xvar].astype(int).value_counts().sort_index()
+                st.caption("Calls per score: " + ", ".join("{} → {}".format(k, v) for k, v in counts.items()))
+            else:
+                st.altair_chart(charts.binned_relationship_chart(
+                    model_frame, xvar, MODEL_VARIABLES[xvar], "car_0_1_pct", "CAR[0,1] (%)"), width="stretch")
         with e2:
             st.markdown("**Average reaction: beat vs. miss**")
-            grp = fd.assign(result=fd["eps_beat"].map({1: "Beat consensus", 0: "Missed / met"}))
+            grp = model_frame.assign(result=(model_frame["eps_surprise_pct"] > 0).map(
+                {True: "Beat consensus", False: "Missed / met"}))
             st.altair_chart(charts.group_mean_chart(grp, "result", "car_0_1_pct", "CAR[0,1] (%)"), width="stretch")
-            if "congratulations_mentioned" in fd.columns:
-                st.markdown("**Average reaction: analyst said 'congratulations'?**")
-                grp = fd.assign(congrats=fd["congratulations_mentioned"].map({1: "Yes", 0: "No"}))
-                st.altair_chart(charts.group_mean_chart(grp, "congrats", "car_0_1_pct", "CAR[0,1] (%)"),
-                                width="stretch")
+            st.markdown("**Average reaction: guidance revision (AI-scored)**")
+            grp = model_frame.assign(guidance=model_frame["guidance_revision"].map(
+                {-1: "Lowered", 0: "Maintained", 1: "Raised"}))
+            st.altair_chart(charts.group_mean_chart(grp, "guidance", "car_0_1_pct", "CAR[0,1] (%)"),
+                            width="stretch")
 
-        with st.expander("Variable dictionary (names, definitions, sources)"):
-            if vars_ds.available:
-                st.dataframe(vars_ds.frame, hide_index=True, column_config={
-                    "definition": st.column_config.TextColumn(width="large")})
-        with st.expander("Full dataset ({:,} rows)".format(len(fd))):
-            st.dataframe(fd, hide_index=True)
-            st.download_button("Download dataset (CSV)", fd.to_csv(index=False).encode(),
-                               Path(str(final_ds.path)).name, mime="text/csv")
+        with st.expander("Do the AI variables just re-measure what we already had? (the 'ruler' check)"):
+            corr_path = REPO_ROOT / "outputs" / "run3_feature_correlations.csv"
+            if corr_path.exists():
+                corr = pd.read_csv(corr_path, index_col=0)
+                corr = corr[[c for c in corr.columns if c not in corr.index]]
+                corr = corr.rename(index=CORR_NAMES, columns=CORR_NAMES)
+                st.dataframe(corr, column_config={
+                    c: st.column_config.NumberColumn(format="%.2f") for c in corr.columns})
+                st.caption("Spearman correlations on the 304 primary events. No AI variable correlates above "
+                           "0.31 in absolute value with EPS surprise or any dictionary measure, so they measure "
+                           "something different. Guidance specificity is 2 for 298 of 304 calls, so it barely "
+                           "varies.")
+        with st.expander("Model dataset ({:,} rows, numbers only)".format(len(model_frame))):
+            st.dataframe(model_frame, hide_index=True)
+            st.download_button("Download (CSV)", model_frame.to_csv(index=False).encode(),
+                               "runs_1_3_primary_sample.csv", mime="text/csv")
 
 # --------------------------------------------------------------------------
 # 2. Data coverage
@@ -841,44 +899,9 @@ with tabs[4]:
                     st.info("Holdout predictions file not delivered.")
 
     st.divider()
-    st.subheader("Language features and later returns")
-    st.markdown("A descriptive look at each language score against the 20-session outcome. "
-                "This is an association plot, not the predictive test above.")
-    if not features_ds.available:
-        awaiting("the transcript-features workstream", "No language features have been delivered.",
-                 ["Scatter of each pre-specified language score against the 20-session abnormal return",
-                  "Coverage of scored events, with synthetic-transcript scores labelled"],
-                 [DATASETS["features"].path])
-    else:
-        feats = features_ds.frame
-        if features_ds.status == SYNTHETIC:
-            synthetic_banner("This feature view")
-        outcome_col = "factor_proxy_abnormal_20d_return_pct"
-        if features_ds.source == "fixture":
-            ev = data["synthetic_events"].frame
-        else:
-            ev = cohort.frame if cohort.available else None
-        lang_cols = language_feature_columns(feats)
-        outcome_title = "20-session ETF-proxy abnormal return (%)"
-        if ev is not None and outcome_col not in ev.columns and "car_0_1_pct" in ev.columns:
-            outcome_col, outcome_title = "car_0_1_pct", "CAR[0,1] (%), checkpoint outcome"
-        if ev is None or outcome_col not in ev.columns:
-            st.info("Features are delivered, but there is no cohort output to join them to yet.")
-        elif not lang_cols:
-            st.error("Features file has no columns starting with 'lang_'.")
-        else:
-            joined = feats.merge(ev[["ticker", "fiscal_period_end", outcome_col]],
-                                 on=["ticker", "fiscal_period_end"], how="left")
-            c1, c2 = st.columns([1, 3])
-            feature = c1.selectbox("Language score", lang_cols)
-            c1.metric("Scored events", len(feats))
-            c1.metric("Joined to an outcome", int(joined[outcome_col].notna().sum()))
-            for meta in ["model_id", "prompt_version"]:
-                if meta in feats.columns:
-                    c1.caption("{}: `{}`".format(meta, feats[meta].dropna().iloc[0] if feats[meta].notna().any() else "—"))
-            with c2:
-                st.altair_chart(charts.feature_scatter(joined, feature, outcome_col,
-                                                       outcome_title), width="stretch")
+    st.subheader("Language variables")
+    st.info("Runs 2–3 (dictionary and AI-scored language) and a real-data explorer of each language "
+            "variable against CAR[0,1] are on the *Results* tab.", icon="➡️")
 
 # --------------------------------------------------------------------------
 # 6. Methods and limitations
@@ -894,9 +917,10 @@ LIMITATIONS = {
         ("Fiscal calendars differ",
          "Some firms (e.g. Apple, Visa) have offset fiscal years; a reporting date does not imply a "
          "calendar-Q2 fiscal end. Each event's period end must be verified.", "README"),
-        ("Transcript coverage may be skewed",
-         "Transcript leads so far are large, heavily covered firms. A language sample limited to "
-         "them may not represent the index.", "Data coverage tab"),
+        ("Transcript coverage and the training cutoff",
+         "474 of 499 events matched a Capital IQ call; 25 did not (call after Aug 7, firm not "
+         "covered, or no call). Runs 2–3 use only calls after June 30, 2026 with a day 0 that matches "
+         "the call, so they rest on 304 of 499 events.", "specs_tried Amendments 2–3, 5"),
         ("Pilot is a convenience sample",
          "The four pilot firms were hand-picked to test the pipeline and carry no evidential weight.",
          "AGENTS, audit"),
@@ -942,9 +966,10 @@ LIMITATIONS = {
          "nothing about real calls.", "Team plan"),
     ],
     "Inference and interpretation": [
-        ("Small holdout",
-         "A 40% holdout of a transcript-covered subset may be small; differences between models "
-         "can be noise. Small samples are labelled exploratory.", "README"),
+        ("Short holdout",
+         "The transcript data ends Aug 7, 2026, so the 40% holdout (113 events) spans only 2 calendar "
+         "weeks of day 0. The week-block bootstrap then resamples 2 blocks and its intervals are not "
+         "reliable on their own; the shuffled-score placebo is the steadier check.", "specs_tried §8"),
         ("Prediction ≠ profit",
          "A predictive association is not a trading strategy: no transaction costs, capacity or "
          "implementation are modelled. Nothing here is investment advice.", "STATUS, audit"),
