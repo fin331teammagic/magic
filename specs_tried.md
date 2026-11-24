@@ -9,10 +9,11 @@ the pre-specification. Once the first real-data run is logged, they are not
 edited. Any later change is added as a dated amendment in Section 8, and
 results produced after a change are labeled as not pre-specified.
 
-> **Status:** FROZEN 2026-11-22 (Amendment 1). Drafted 2026-11-19. No model had been fit on real data when it was frozen. The only
-> runs in `outputs/` use the synthetic 500-call fixture
-> (`data_status = synthetic`). Items marked **[TEAM]** need a team decision
-> before this section is frozen.
+> **Status:** FROZEN 2026-11-22 (Amendment 1). Drafted 2026-11-19. No model
+> had been fit on real data when it was frozen. When it was frozen, the only
+> runs in `outputs/` used the synthetic 500-call fixture. The **[TEAM]** items
+> below were settled in Amendments 1 and 5. Real-data runs are logged in §8
+> (runs 4–5 and 12–19).
 
 ## 1. Question and design
 
@@ -270,7 +271,8 @@ of labels agreeing with the reference, summed over the five variables plus
   `analyst_concern_focus` 1 vs 2; the one validation disagreement was
   `qa_evasiveness` 1 vs 2.
 - **Conclusion.** The results support the proposed Sonnet 5.5 for Run 3. The
-  [TEAM] model decision stays open until the team signs off.
+  [TEAM] model decision stays open until the team signs off. *(Superseded by
+  Amendment 5: the real calls were scored with Gemma 4 by the course lead.)*
 
 **Runs 4–5 results.** These come from the same script execution. The script
 was tested only on invented data before this run.

@@ -269,6 +269,11 @@ def main(argv=None):
         flows += f
         preds.append(p)
     provenance = rm.provenance_fields(args.cohort)
+    provenance["outcome"] = rm.OUTCOME
+    if args.outcome_override:
+        source, column = args.outcome_override
+        provenance["outcome"] = "{} from {} (replaces {})".format(column, source, rm.OUTCOME)
+        provenance["outcome_file_commit"] = rm.provenance_fields(source)["cohort_file_commit"]
     out = args.out_dir
     out.mkdir(parents=True, exist_ok=True)
     for name, frame in (("model_runs", pd.DataFrame(runs).assign(**provenance)),

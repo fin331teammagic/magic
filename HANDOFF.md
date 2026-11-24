@@ -11,7 +11,7 @@ Updated 2026-11-23 by Abby.
 | Piece | Status | Where |
 |---|---|---|
 | Run 1 (fundamentals) on the real cohort | Done: in-sample R² 0.036 (Wald p = 0.0005), holdout R² 0.004 | `outputs/model_comparison_metrics.csv`, `specs_tried.md` §8 |
-| Pre-specification | Frozen, with Amendments 1–3 | `specs_tried.md` |
+| Pre-specification | Frozen, with Amendments 1–5 | `specs_tried.md` |
 | 2026 transcripts matched to the cohort | 474 of 499; 395 after the June 2026 model cutoff | `TRANSCRIPT_CHECKPOINT.md` |
 | Run 2 dictionary features | Built (local, no text committed) | `outputs/q2_2026_dictionary_features.csv` |
 | Run 3 LLM scores | **Done** by Prof. Bowen on a local model (Gemma 4), merged in PR #22: 394 of 395 parsed | `outputs/llm_scores_real/`, `docs/LOCAL_LLM_INSTRUCTOR_RUN.md` |
@@ -24,14 +24,11 @@ Updated 2026-11-23 by Abby.
 1. ~~Dashboard~~ **Done, 2026-11-23.** Streamlit is allowed in the org and
    the app is live. Optional: delete nothing; the app is in the
    `fin331teammagic` workspace on share.streamlit.io.
-2. **Day-0 fix (optional, but it adds events).** For the 21 events in
-   `docs/DAY0_TRANSCRIPT_CHECK.md`, the cohort timestamp is an earlier 8-K.
-   - Find the 8-K that carries the quarterly earnings release. It is
-     usually filed on the call date or the evening before.
-   - Rerun the event study for those events.
-
-   If that's done before Runs 2–3 are scored, the events come back in
-   (Amendment 3).
+2. ~~Day-0 fix~~ **No longer needed.** Runs 2–3 have run, and the 21 events
+   in `docs/DAY0_TRANSCRIPT_CHECK.md` stay excluded and disclosed
+   (Amendment 3). Fixing them now would change the sample after results.
+3. **Presentation:** the cohort slide (499 events, how day 0 is set, the
+   CAR[0,1] distribution).
 
 ## Cammy
 

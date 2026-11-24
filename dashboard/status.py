@@ -243,9 +243,9 @@ def coverage_funnel(roster, cohort, audit, features, metrics) -> pd.DataFrame:
         ("Verified Q2 2026 events", n(cohort), "Gus",
          "Fiscal quarter ending Apr 1 – Jun 30, 2026, with sourced EPS and timestamp."),
         ("Events with CAR[0,1] (primary)", car_01, "Gus",
-         "Checkpoint outcome from easy_es (Fama-French 5 factors)."),
+         "Primary outcome, from easy_es (Fama-French 5 factors)."),
         ("Complete 20-session outcome", complete_20d, "Gus",
-         "Primary outcome observed for the full window."),
+         "Secondary outcome; not computed for the cohort."),
         ("Transcript located", located, "Transcript coordination",
          "From the access log; locating a transcript is not permission to use it."),
         ("Transcript rights cleared", cleared, "Transcript coordination",
@@ -253,7 +253,7 @@ def coverage_funnel(roster, cohort, audit, features, metrics) -> pd.DataFrame:
         ("Events with language features", scored, "Transcript coordination",
          "Non-synthetic scored events only."),
         ("Model sample (train + holdout)", model_n, "Cammy",
-         "Shared complete-case sample used by both models."),
+         "Run 1 on its full complete-case sample; Runs 1–3 together use 304 events (Results tab)."),
     ]
     return pd.DataFrame(stages, columns=["stage", "count", "owner", "note"])
 

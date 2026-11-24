@@ -671,9 +671,9 @@ with tabs[3]:
         if roster is not None and "company" not in df.columns:
             df = df.merge(roster[["Symbol", "Security", "GICS Sector"]].rename(
                 columns={"Symbol": "ticker", "Security": "company", "GICS Sector": "sector"}), on="ticker", how="left")
-        CAR_METHOD = "CAR[0,1], Fama-French 5 (checkpoint)"
+        CAR_METHOD = "CAR[0,1], Fama-French 5 (primary)"
         methods = ([CAR_METHOD] if "car_0_1_pct" in df.columns else []) + [
-            "ETF factor proxies (primary)", "SPY buy-and-hold (robustness)"]
+            "ETF factor proxies (secondary, pilot)", "SPY buy-and-hold (robustness)"]
         c1, c2, c3 = st.columns([2, 1, 2])
         method = c1.segmented_control("Return method", methods, default=methods[0], required=True)
     if events is not None and method == CAR_METHOD:
