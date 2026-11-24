@@ -218,6 +218,9 @@ outside knowledge of the stock price.
 - Before scoring real calls, check the rubric on the synthetic development
   set, as for v2.0. That set was written for the v2.0 variables, so most of
   these questions would need new invented calls, or a smaller check.
-- Write the four prompt files (`prompts/transcript_llm_scores_v3.0_{a,b,c,d}.txt`)
-  and extend `ALLOWED_VALUES` in `code/score_transcripts_edsl.py` once the
-  list is settled.
+- Prof. Bowen is scoring these as of 2026-11-24 (scores expected
+  2026-11-25). The allowed values above are in `QUESTIONS` in
+  `code/explore_llm_questions.py`, which rejects any returned file that
+  breaks them. If his prompts changed a scale, update `QUESTIONS` to match
+  his prompt text before analysing, and record the prompt files he used.
+- Analysis plan: `specs_tried.md` Amendment 6.
