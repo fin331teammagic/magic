@@ -1,0 +1,2 @@
+label,n,gap_mean,gap_sd,spearman_with_car_0_1,coef_per_sd_controlling_run1,ci_low_per_sd,ci_high_per_sd,p_value_clustered
+"EXPLORATORY, not pre-specified (Amendment 5)",304,0.015964598806366127,0.008694924503467052,-0.04225561469002811,-0.24867702937855754,-1.1065246574179297,0.6091705986608147,0.5699237073832801

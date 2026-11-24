@@ -245,6 +245,11 @@ failed and discarded runs.
 | 9 | 2026-11-22 | Abby | 474 matched real calls (local only; nothing sent) | — | Run 2 dictionary features, `code/build_dictionary_features.py` (Amendment 3). Feature build only, no model fit | 474 | No | `outputs/q2_2026_dictionary_features.csv` |
 | 10 | 2026-11-23 | Prof. Bowen | 474 matched real calls, on his own computer (nothing sent off it) | — | Run 3 LLM scoring: prompt v2.0 (SHA-256 `9a9bc0cb…`), Gemma 4 26B-A4B-it (Q6_K_XL GGUF), llama.cpp, EDSL 1.0.9 with remote features off, temperature 0. Scoring only, no model fit. Synthetic validation 8/8 calls agree on every field; development 12/12 parsed, 1 disagreement | 474 (472 parsed); 395 after the cutoff (394 parsed) | No | `outputs/llm_scores_real/` (PR #22); `docs/LOCAL_LLM_INSTRUCTOR_RUN.md` |
 | 11 | 2026-11-23 | Abby | Run 1–3 primary common sample (no outcome values read) | — | Predictor descriptives: Run 3 distributions; Spearman correlations with EPS surprise and Run 2, `code/describe_run3_features.py` | 304 | No | `outputs/run3_feature_distribution.csv`, `outputs/run3_feature_correlations.csv` |
+| 12 | 2026-11-23 | Abby | real cohort + dictionary features + Gemma 4 scores (after cutoff), primary sample | CAR[0,1] | Nested Runs 1–3 (§2–5, Amendments 1–5), `code/run_nested_models.py` @ `b697c88` | 304; 191 / 113 | **Yes, once** | `outputs/model_runs.csv`, `model_coefficients.csv`, `run_predictions.csv`, `nested_sample_flow.csv` (`sample = primary`) |
+| 13 | 2026-11-23 | Abby | same, all events (robustness) | CAR[0,1] | same | 307; 192 / 115 | **Yes, once** | same files, `all_events` |
+| 14 | 2026-11-23 | Abby | same, primary; `guidance_revision` null as its own category (robustness, Amendment 5) | CAR[0,1] | same + `no_prior_guidance` in Run 3 | 335; 214 / 121 | **Yes, once** | same files, `primary_null_category` |
+| 15 | 2026-11-23 | Abby | same, primary; all matched calls, no cutoff filter (robustness, Amendment 5) | CAR[0,1] | same, `..._gemma4_all474.csv` | 360; 247 / 113 | **Yes, once** | same files, `primary_all_calls` |
+| 16 | 2026-11-23 | Abby | primary common sample | CAR[0,1] | **Exploratory, not pre-specified:** sentiment gap (prepared-remarks minus analyst-question sentiment) with Run 1 controls, in-sample only, `code/exploratory_sentiment_gap.py` | 304 | No | `outputs/exploratory_sentiment_gap.csv` |
 
 **Runs 3 and 6–8: rubric checks on invented calls.** Each cell is the number
 of labels agreeing with the reference, summed over the five variables plus
@@ -290,6 +295,45 @@ was tested only on invented data before this run.
 - **All events (robustness):** the estimates are nearly identical:
   - in-sample R² 0.033 and Wald p = 0.0006;
   - holdout out-of-sample R² 0.0005.
+
+**Runs 12–15: nested Runs 1–3 on real data.** Outcome CAR[0,1]. The
+primary sample has 304 events. Training covers day 0 through 2026-07-30
+(191 events); the holdout runs from 2026-07-31 (113 events).
+
+| Primary | In-sample R² (adj.) | Block Wald p | Holdout R² | RMSE (pp) | Holdout ΔMSE vs. previous [week-block 95%] | Placebo share ≥ actual |
+|---|---|---|---|---|---|---|
+| Run 1: fundamentals | 0.030 (0.014) | — | 0.034 | 6.84 | — | — |
+| Run 2: + dictionary | 0.075 (0.043) | 0.0001 | 0.001 | 6.96 | −1.56 [−1.64, −1.29] | 0.64 |
+| Run 3: + LLM | 0.111 (0.065) | 0.0002 | −0.047 | 7.12 | −2.35 [−2.73, −1.03] | 0.76 |
+
+- **Pre-specified answer: not supported.** In-sample, each language block
+  is jointly significant. On the holdout, each one makes predictions
+  *worse* than the run before it, and shuffled scores do at least as well
+  in 64% and 76% of placebo draws. Neither ΔMSE interval lies above zero.
+- **Coefficients** (Run 3, primary, clustered by day 0):
+  - `guidance_revision`: +1.59 pp of CAR[0,1] per step, from lowered to
+    raised guidance (p = 0.037; +1.05 pp per SD).
+  - `one_off_attribution`: −0.79 per step (p = 0.053).
+  - `analyst_question_sentiment` is the strongest Run 2 variable (p = 0.002
+    in Run 2; 0.059 in Run 3).
+  - The 52-week return is negative (p = 0.028).
+  - EPS surprise is not significant on this smaller, later sample
+    (p = 0.19), unlike Run 1's full sample (runs 4–5).
+- **Robustness:**
+  - `all_events` matches the primary result.
+  - `primary_null_category` (335 events): Run 3 is again worse on the
+    holdout (ΔMSE −2.80; placebo 0.80).
+  - `primary_all_calls` (360 events, including the 79 pre-cutoff calls):
+    Run 3 is not significant in-sample (Wald p = 0.092). Its holdout ΔMSE
+    is +0.11, with an interval of [−0.32, 1.63] that includes zero.
+- **Disclosed limitation:** the transcript data ends 2026-08-07, so the
+  holdout spans only **2 calendar weeks** of day 0. The week-block bootstrap
+  therefore resamples 2 blocks, and its intervals are too narrow to trust
+  on their own. The placebo shares are the steadier evidence, and they
+  agree.
+- **Run 16, exploratory:** the sentiment gap has a Spearman correlation of
+  −0.04 with CAR[0,1]. With Run 1 controls it is −0.25 pp per SD
+  [−1.11, 0.61], p = 0.57. There is no sign of an effect.
 
 ### Amendments
 
