@@ -1,2 +1,2 @@
 model,file,rows,valid_rows,variables,cohort_file,cohort_file_commit,code_commit,run_date,outcome,sample,baseline,holdout_train_through,status
-gemma4,outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv,395,394,guidance_specificity guidance_revision qa_evasiveness one_off_attribution analyst_concern_focus,outputs/q2_2026_cohort.csv,a6ef269,bdf381c,2026-11-24,car_0_1_pct,primary,run2,2026-07-30,EXPLORATORY (not pre-specified)
+gemma4,outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv,395,394,guidance_specificity guidance_revision qa_evasiveness one_off_attribution analyst_concern_focus,outputs/q2_2026_cohort.csv,a6ef269,72b7a7a,2026-11-24,car_0_1_pct,primary,run2,2026-07-30,EXPLORATORY (not pre-specified)
