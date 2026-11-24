@@ -331,18 +331,20 @@ class AppSmokeTests(unittest.TestCase):
         self.assertFalse(app.exception, [e.value for e in app.exception])
         return app
 
-    def test_app_runs_without_fixtures_and_labels_synthetic_outputs(self):
-        # outputs/transcript_features.csv is Abby's synthetic handoff, so the
-        # banner must appear even with fixtures off.
+    def test_app_runs_without_fixtures_and_shows_real_runs(self):
+        # Runs 1-3 are real (outputs/model_runs.csv), so the Results tab shows
+        # the pre-specified answer and no model view carries a synthetic banner.
         app = self._run(False)
-        self.assertTrue(any("SYNTHETIC TEST DATA" in e.value for e in app.error))
-        self.assertTrue(any("synthetic inputs" in e.value for e in app.error))
+        self.assertTrue(any("Answer (pre-specified test)" in i.value for i in app.info))
+        self.assertFalse(any("SYNTHETIC" in e.value for e in app.error), [e.value[:80] for e in app.error])
         # The pilot banner shows only while the real cohort file is absent.
         has_cohort = (ROOT / "outputs" / "q2_2026_cohort.csv").exists()
         self.assertEqual(any("PILOT DATA" in w.value for w in app.warning), not has_cohort)
 
-    def test_app_runs_with_fixtures_and_labels_them(self):
+    def test_app_runs_with_fixtures_and_real_files_still_win(self):
         app = self._run(True)
-        self.assertTrue(any("SYNTHETIC TEST DATA" in e.value for e in app.error))
+        self.assertTrue(any("Answer (pre-specified test)" in i.value for i in app.info))
+
+
 if __name__ == "__main__":
     unittest.main()

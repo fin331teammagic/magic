@@ -175,6 +175,13 @@ In `a29a1e4`:
   `ANALYSIS_PLAN.md` and `specs_tried.md` §3.
 - The 20-session ETF-proxy return is listed as secondary.
 - The dashboard's "How the study works" panel says the same.
+- Added 2026-11-23:
+  - The dashboard's headline question now names CAR[0,1].
+  - Its coverage chart labels the 20-session return as secondary.
+  - `ANALYSIS_PLAN.md` calls CAR[0,1] the primary outcome, and the
+    20-session return a secondary outcome that is not computed.
+  - The Results tab's variable explorer now uses the real 304-event model
+    sample, not synthetic data.
 
 ## CP2 A4 · Pinned versions and Yahoo drift
 

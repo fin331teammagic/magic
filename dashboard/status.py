@@ -54,10 +54,10 @@ EVENT_FIELDS = [
     ("EPS actual", "eps_actual", None),
     ("EPS consensus", "eps_estimate", None),
     ("EPS surprise", "eps_surprise_pct", None),
-    ("CAR[0,1] (checkpoint)", "car_0_1_pct", None),
+    ("CAR[0,1] (primary)", "car_0_1_pct", None),
     ("Announcement reaction", "factor_proxy_announcement_abnormal_return_pct", 0),
     ("5-session return", "factor_proxy_abnormal_5d_return_pct", 5),
-    ("20-session return (primary)", "factor_proxy_abnormal_20d_return_pct", 20),
+    ("20-session return (secondary)", "factor_proxy_abnormal_20d_return_pct", 20),
     ("60-session return", "factor_proxy_abnormal_60d_return_pct", 60),
 ]
 TRANSCRIPT_FIELD = "Transcript"
@@ -242,7 +242,7 @@ def coverage_funnel(roster, cohort, audit, features, metrics) -> pd.DataFrame:
          "Fixed point-in-time universe."),
         ("Verified Q2 2026 events", n(cohort), "Gus",
          "Fiscal quarter ending Apr 1 – Jun 30, 2026, with sourced EPS and timestamp."),
-        ("Events with CAR[0,1] (checkpoint)", car_01, "Gus",
+        ("Events with CAR[0,1] (primary)", car_01, "Gus",
          "Checkpoint outcome from easy_es (Fama-French 5 factors)."),
         ("Complete 20-session outcome", complete_20d, "Gus",
          "Primary outcome observed for the full window."),
