@@ -545,7 +545,9 @@ with explore_tab:
                         icon="ℹ️")
 
             st.markdown("#### Effect of each question, added alone to Runs 1–2 (in-sample)")
-            st.altair_chart(charts.question_screen_chart(ex_leads), width="stretch")
+            ex_order = {m: i for i, m in enumerate(dict.fromkeys(ex_single["model"]))}
+            st.altair_chart(charts.question_screen_chart(
+                ex_leads.sort_values("model", key=lambda s: s.map(ex_order))), width="stretch")
             st.caption("Dot = change in CAR[0,1] (percentage points) when the question's score rises by one "
                        "standard deviation, holding fundamentals and dictionary measures fixed. Line = 95% "
                        "interval, standard errors clustered by day 0. Calls with a null answer are dropped.")
