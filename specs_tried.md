@@ -255,6 +255,9 @@ failed and discarded runs.
 | 18 | 2026-11-23 | Abby | same | — | Amendment 4 outcome: CAR[0,1] with a true 255-session estimation window (`--mode full`); median shift 0.27 pp, max 2.75, corr 0.997; HPE 16.89 → 17.91 as in the audit | 492 | No | `outputs/q2_2026_car_255.csv` |
 | 19 | 2026-11-23 | Abby | as runs 12–15, outcome replaced by run 18 | CAR[0,1], 255-session window | Nested Runs 1–3, all four samples, `run_nested_models.py --outcome-override` | 304 / 307 / 335 / 360 | **Yes, once** | `outputs/robustness_car255/` |
 | 20 | 2026-11-24 | Abby | base sample of Amendment 3 (336 primary events) + Gemma 4 v2.0 scores | CAR[0,1] | **Exploratory, not pre-specified (Amendment 6):** each v2.0 question added alone to Run 1 + Run 2; all five as one block, nulls coded 0 plus an indicator. `code/explore_llm_questions.py`. Pipeline check before the v3.0 scores arrive | 304–335 | Yes (already seen in runs 12–19) | `outputs/exploratory_llm_questions/v2.0_gemma4/` |
+| 21 | 2026-11-24/25 | Prof. Bowen | 474 matched real calls, on his own computer (nothing sent off it) | — | v3.0 scoring: all 20 questions in one prompt (`prompts/transcript_llm_scores_v3.0_all.txt`, SHA-256 `c9247910…`), Gemma 4 26B-A4B, gpt-oss-20b, Qwen3.5-27B; llama.cpp, EDSL 1.0.9 local only, temperature 0, reasoning cap 12,288 tokens. Scoring only, no model fit | 474 per model (Gemma, Qwen 474 parsed; gpt-oss 473, SHW missing); 395 after the cutoff | No | `outputs/llm_scores_real/*v3.0*`; `docs/LOCAL_LLM_V3_RUN.md`; issue #31 |
+| 22 | 2026-11-25 | Abby | Amendment 3 base sample (336 primary events) + run 21 scores (after cutoff) | CAR[0,1] | **Exploratory (Amendment 6):** v3.0 screen, three models + consensus, baseline Run 1 + Run 2. `code/explore_llm_questions.py`, `code/summarize_llm_screen.py` | 225–336 | Yes (already seen in runs 12–20) | `outputs/exploratory_llm_questions/v3.0_three_models/` (`SUMMARY.md`) |
+| 23 | 2026-11-25 | Abby | as run 22, Run 1–3 common sample | CAR[0,1] | **Exploratory robustness:** same screen with the five v2.0 Gemma 4 variables added to the baseline (`--baseline run3`) | 304 | Yes (already seen) | `outputs/exploratory_llm_questions/v3.0_run3_baseline/` |
 
 **Runs 3 and 6–8: rubric checks on invented calls.** Each cell is the number
 of labels agreeing with the reference, summed over the five variables plus
@@ -361,6 +364,57 @@ was added alone to Run 1 + Run 2:
   variables. This is not an independent discovery. Runs 12–19 had already
   shown it as the strongest variable on the same holdout, so it is a lead
   to test on new data, not a result.
+
+**Runs 21–23, exploratory (Amendment 6).**
+
+- **How Prof. Bowen's run differs from our draft** (`docs/LOCAL_LLM_V3_RUN.md`):
+  - All 20 questions were asked in one prompt, not four groups of five. On
+    20 synthetic calls, one prompt and two 10-question prompts gave the same
+    answer 93% of the time.
+  - Reasoning was capped at 12,288 tokens. Gemma reached the cap on 206 of
+    474 calls and Qwen on 182. The re-checking it cut short was mostly on
+    judgment items.
+  - 28 gpt-oss replies put null where the rubric has none. They were scored
+    again. SHW still fails and is missing.
+  - The scales are the draft's, word for word. Q20 adds "judge from the text
+    only".
+- **Variation:** `qa_vs_prepared` and `balance_sheet_concern` are over 90%
+  one answer in every model. Four more questions are for at least one model
+  (`SUMMARY.md`).
+- **Agreement:** median quadratic-weighted kappa is 0.54 (range −0.04 to
+  0.93). Gemma and Qwen agree with each other most. gpt-oss is the odd one
+  out.
+- **Leads (run 22, the Amendment 6 rule):**
+
+  | Question | Gemma 4 | Qwen3.5 | Consensus | gpt-oss |
+  |---|---|---|---|---|
+  | `expected_investor_reaction` (Q20) | +2.61 pp, q 0.0003, ΔMSE +2.30, placebo 0.000 | +2.67, q < 0.0001, +3.67, 0.000 | +3.74, q < 0.0001, +3.17, 0.000 | +1.71, p 0.08, +0.08, 0.29 (fails) |
+  | `analyst_pushback` | −1.85, q 0.089, +1.29, 0.012 | −1.73, q 0.023, +1.38, 0.010 | −2.62, q 0.017, +1.59, 0.002 | fails |
+
+  - Per step of the question's scale, against Run 1 + Run 2. 21 of 80
+    model × question rows have p < 0.05, against about 4 expected by chance.
+  - `missed_own_target` and `margin_outlook` pass for Qwen alone, so they
+    are not leads.
+  - The all-questions block does not improve the holdout for any model.
+- **Q20 benchmark:** the overall read beats the best specific question for
+  Gemma, Qwen and the consensus. It correlates 0.46 with v2.0
+  `guidance_revision`.
+- **Run 23 (adding the five v2.0 variables to the baseline, 304 events):**
+  - Both effects are smaller but keep their sign, and both still improve
+    the holdout:
+    - Q20: +1.8 to +2.9 pp; placebo at most 0.034.
+    - `analyst_pushback`: −1.7 to −2.8 pp; placebo 0.000.
+  - Gemma's q is 0.17 for both, so only Qwen passes, and neither is a lead
+    under this baseline.
+  - `analyst_pushback` correlates at most 0.08 in absolute value with any
+    earlier variable. Q20 overlaps with `guidance_revision`.
+- **Reading:** two leads to test on a later quarter. Q20 is the draft's
+  planned exception: an overall judgment, not a new specific signal. The
+  pre-specified answer (runs 12–19: not supported) is unchanged.
+- **Caveats:**
+  - The holdout covers 2 weeks and has already been seen.
+  - "2 of 3 models" rests on Gemma and Qwen, the two most similar models.
+  - Each model scored each call once.
 
 ### Amendments
 
