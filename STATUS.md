@@ -16,11 +16,15 @@
   predictions worse, so the language variables are **not supported**.
   - The 255-session estimation window gives the same answer.
   - Dashboard: https://team-magic-pead.streamlit.app
-- **Exploratory, in progress (Amendment 6):** Prof. Bowen is scoring 20
-  more questions (`docs/LLM_QUESTIONS_V3_DRAFT.md`) with up to three local
-  models. `code/explore_llm_questions.py` is ready for the files. Run 20 is
-  a pipeline check on the v2.0 scores. The 30-call reliability rerun is
-  dropped.
+- **Exploratory (Amendment 6, runs 21–23):** Prof. Bowen scored 20 more
+  questions with Gemma 4, gpt-oss-20b and Qwen3.5-27B.
+  - Two questions meet the lead rule for Gemma, Qwen and their consensus:
+    `expected_investor_reaction` (the overall read, +2.6 to +3.7 pp per
+    step) and `analyst_pushback` (−1.7 to −2.6 pp).
+  - gpt-oss supports neither.
+  - Both are leads for a later quarter, not results
+    (`outputs/exploratory_llm_questions/v3.0_three_models/SUMMARY.md`).
+  - The pre-specified answer is unchanged.
 
 Everything below is the project history before 2026-11-19, kept for the
 record. Where it differs from the summary above, the summary and
