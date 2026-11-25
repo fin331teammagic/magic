@@ -91,10 +91,18 @@ not change the pre-specified analysis.
   5. **All questions as one block**, with nulls coded 0 plus an indicator.
      With about 20 questions on about 300 events, we expect this to overfit
      in-sample.
-- **What counts as a lead.** A question is a lead only if it is
-  **consistent across models** and **holds up on the holdout**. A single
-  significant in-sample coefficient is not enough. With 20 questions and 3
-  models, about 3 p-values below 0.05 are expected by chance alone.
+- **What counts as a lead** (Amendment 6 lead rule, fixed 2026-11-24 before
+  any v3.0 score was received). A question is a lead for a given model only
+  if all three hold:
+  1. its coefficient has the **same sign for at least 2 of the 3 models**
+     (the consensus row is not counted);
+  2. its **Benjamini–Hochberg q within that model is below 0.10**;
+  3. its **holdout ΔMSE is above 0, with a placebo share below 0.05**.
+
+  A single significant in-sample coefficient is not enough. With 20
+  questions and 3 models, about 3 p-values below 0.05 are expected by chance
+  alone. The dashboard's exploratory tab (`dashboard/exploratory.py`)
+  applies the same rule.
 
 **Pipeline check (run 20).** Before the v3.0 scores arrived, we ran the same
 code on the five v2.0 Gemma 4 scores. The all-five block reproduced run 14
@@ -105,20 +113,24 @@ code on the five v2.0 Gemma 4 scores. The all-five block reproduced run 14
 Each one-at-a-time row in `one_at_a_time.csv` answers: *does this question
 add anything to fundamentals plus dictionary measures?*
 
-| Column | Meaning | Reads as a lead when… |
+| Column | Meaning | Lead rule (Amendment 6) |
 |---|---|---|
-| `coef`, `coef_per_sd` | Change in CAR[0,1], in pp, per step of the question's scale (or per SD) | Same sign for every model |
-| `p_value` | Day-0-clustered p for that coefficient | Small, but on its own it is not evidence |
-| `bh_q_within_model` | p adjusted for testing ~20 questions per model | Small [team to confirm a cutoff, e.g. 0.10; Amendment 6 sets none] |
-| `delta_r2` | In-sample R² gain over Run 1 + Run 2 | Always ≥ 0; not evidence alone |
-| `delta_mse` | Holdout MSE of baseline minus MSE with the question. **Positive = the question improves predictions** | Positive |
-| `placebo_share` | Share of 500 shuffled-score draws with ΔMSE at least as large as the real one | Small (e.g. below 0.05) |
+| `coef`, `coef_per_sd` | Change in CAR[0,1], in pp, per step of the question's scale (or per SD) | Same sign in at least 2 of 3 models (consensus not counted) |
+| `p_value` | Day-0-clustered p for that coefficient | Not part of the rule; on its own it is not evidence |
+| `bh_q_within_model` | p adjusted for testing ~20 questions per model | Below 0.10 |
+| `delta_r2` | In-sample R² gain over Run 1 + Run 2 | Not part of the rule; always ≥ 0 |
+| `delta_mse` | Holdout MSE of baseline minus MSE with the question. **Positive = the question improves predictions** | Above 0 |
+| `placebo_share` | Share of 500 shuffled-score draws with ΔMSE at least as large as the real one | Below 0.05 |
+
+All three conditions must hold for the same model.
 
 Run 20 shows both ends. `guidance_revision` had ΔMSE +1.66 and placebo share
 0.004: almost no shuffled draw did as well. `guidance_specificity` had ΔMSE
 −2.03 and placebo share 0.93: it made predictions worse and did worse than
-noise. Even `guidance_revision` is a lead, not a result, because we had
-already seen it as the strongest Run 3 variable on the same holdout.
+noise. Run 20 has only one model, so the direction check cannot pass and it
+has no leads by construction. Even if it could, `guidance_revision` would be
+a lead, not a result, because we had already seen it as the strongest Run 3
+variable on the same holdout.
 
 Three cautions apply to every number in this section:
 
@@ -144,18 +156,19 @@ questions are [__].
 [__] (`[__]`); with Run 2, [__] (`[__]`); with the v2.0 variables, [__]
 (`[__]`).
 
-**One question at a time** (consensus scores; per-model results in the
-appendix):
+**One question at a time** (one row per question and model, since the lead
+rule is judged per model; consensus-score results in the appendix):
 
-| Question | n | Coef. (pp per step) | p | BH q | Holdout ΔMSE | Placebo share | Same sign in all models? |
-|---|---|---|---|---|---|---|---|
-| [__] | [__] | [__] | [__] | [__] | [__] | [__] | [__] |
-| … | | | | | | | |
+| Question | Model | n | Coef. (pp per step) | p | BH q | Holdout ΔMSE | Placebo share | Same sign in at least 2 of 3 models? | Lead? |
+|---|---|---|---|---|---|---|---|---|---|
+| [__] | [__] | [__] | [__] | [__] | [__] | [__] | [__] | [__] | [__] |
+| … | | | | | | | | | |
 
 [__] questions have p < 0.05 for at least one model, against about 3
-expected by chance. [__] questions meet both lead conditions (consistent
-across models and positive holdout ΔMSE with a small placebo share):
-[__ list, or "none"].
+expected by chance. Under the Amendment 6 lead rule (same sign in at least
+2 of 3 models, BH q < 0.10, holdout ΔMSE > 0 with placebo share < 0.05),
+[__] questions are leads for at least one model: [__ list with the models,
+or "none"].
 
 **Q20 benchmark.** `expected_investor_reaction` has coefficient [__]
 (p = [__]), holdout ΔMSE [__] and placebo share [__]. Compared with the best
