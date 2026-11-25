@@ -346,6 +346,8 @@ python code/exploratory_sentiment_gap.py \
 python code/explore_llm_questions.py \
   --scores gemma4=outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv \
   --out-dir outputs/exploratory_llm_questions/v2.0_gemma4   # run 20, exploratory
+python code/summarize_llm_screen.py outputs/exploratory_llm_questions/v2.0_gemma4
+                                               # SUMMARY.md + call_check_sample.csv
 python -m unittest discover -s tests
 ```
 
