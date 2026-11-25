@@ -58,6 +58,17 @@ class ProposedLeadsTest(unittest.TestCase):
         self.assertFalse(ex.proposed_leads(single)["survives_multiple_testing"].any())
 
 
+class QuestionChartTest(unittest.TestCase):
+    def test_chart_height_stays_readable_for_three_models(self):
+        import charts  # noqa: E402
+        rows = pd.DataFrame([{"model": m, "variable": f"q{i}", "coef_per_sd": 0.1, "ci_low_per_sd": -0.1,
+                              "ci_high_per_sd": 0.3, "bh_q_within_model": 0.5, "n": 300}
+                             for m in ("A", "B", "C", "consensus") for i in range(20)])
+        spec = charts.question_screen_chart(rows).to_dict()
+        # 20 questions x 4 models x step: must stay under about 1,100 px, not ~5,000.
+        self.assertLessEqual(spec["height"]["step"] * 20 * 4, 1100)
+
+
 class ScreenFilesTest(unittest.TestCase):
     def test_list_and_load(self):
         with tempfile.TemporaryDirectory() as tmp:

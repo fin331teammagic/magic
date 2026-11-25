@@ -377,11 +377,16 @@ def run_predictions_chart(preds: pd.DataFrame, run_col: str, run_label: str) -> 
     return (diag + dots).properties(height=360)
 
 
+SCREEN_ROW_STEP = 12
+
+
 def question_screen_chart(rows: pd.DataFrame) -> alt.Chart:
     """Effect per +1 SD of each question added alone, one dot and interval per model."""
     df = rows.dropna(subset=["coef_per_sd"]).copy()
     order = list(df.groupby("variable")["coef_per_sd"].mean().sort_values().index)
-    models = list(dict.fromkeys(df["model"]))
+    # Real models get the colors, in the order given; the cross-model mean is last, in gray.
+    models = [m for m in dict.fromkeys(df["model"]) if m != "consensus"]
+    models += ["consensus"] if "consensus" in set(df["model"]) else []
     palette = [BLUE, ORANGE, AQUA, MUTED]
     base = alt.Chart(df).encode(
         y=alt.Y("variable:N", sort=order, title=None, axis=alt.Axis(labelLimit=260)),
@@ -399,5 +404,6 @@ def question_screen_chart(rows: pd.DataFrame) -> alt.Chart:
         x=alt.X("ci_low_per_sd:Q", title="Change in CAR[0,1] per +1 SD (pp), added alone to Runs 1-2"),
         x2="ci_high_per_sd:Q")
     dots = base.mark_circle(size=70, opacity=1).encode(x="coef_per_sd:Q")
-    step = 14 * max(len(models), 1) + 8
-    return (_zero_rule("x") + bars + dots).properties(height=alt.Step(step))
+    # With yOffset, Vega-Lite applies the step to each model's sub-row, not to
+    # the whole question, so this is the height per model dot.
+    return (_zero_rule("x") + bars + dots).properties(height=alt.Step(SCREEN_ROW_STEP))
