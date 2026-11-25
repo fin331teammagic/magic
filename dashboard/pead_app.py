@@ -535,9 +535,10 @@ with explore_tab:
             ex_k[2].metric("Events (base sample)", "{:,}".format(ex_base_n), border=True,
                         help="Runs 1–2 complete, call after the cutoff, day 0 consistent. Each question "
                              "drops its own nulls, so its n can be lower.")
-            ex_k[3].metric("Leads", int(ex_leads["proposed_lead"].sum()), border=True,
-                        help="Rows meeting all three checks below (rule fixed in Amendment 6 before the "
-                             "v3.0 scores arrived).")
+            ex_k[3].metric("Lead questions", int(ex_leads.loc[ex_leads["proposed_lead"], "variable"].nunique()),
+                        border=True,
+                        help="Questions that are a lead for at least one model; the 'Lead' column below has one "
+                             "row per model. Rule fixed in Amendment 6 before the v3.0 scores arrived.")
             if len(ex_real_models) < exploratory.LEAD_MIN_MODELS:
                 st.info("Only one model in this screen, so the 'passes in at least two models' check cannot "
                         "pass and no row is a proposed lead. That is expected for the v2.0 pipeline check.",

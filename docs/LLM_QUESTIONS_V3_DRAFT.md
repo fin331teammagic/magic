@@ -1,7 +1,9 @@
 # Draft: 20 more LLM questions (prompt v3.0)
 
-**Status:** draft for Professor Bowen and the team, 2026-11-24. Not yet frozen.
-Nothing has been scored.
+**Status:** scored. Prof. Bowen asked these questions word for word, in one
+prompt (`prompts/transcript_llm_scores_v3.0_all.txt`), with three local
+models on 2026-11-24/25 (`docs/LOCAL_LLM_V3_RUN.md`, issue #31). Results:
+`specs_tried.md` runs 21–23. The text below is the draft as sent.
 
 ## What this is
 
@@ -218,9 +220,7 @@ outside knowledge of the stock price.
 - Before scoring real calls, check the rubric on the synthetic development
   set, as for v2.0. That set was written for the v2.0 variables, so most of
   these questions would need new invented calls, or a smaller check.
-- Prof. Bowen is scoring these as of 2026-11-24 (scores expected
-  2026-11-25). The allowed values above are in `QUESTIONS` in
-  `code/explore_llm_questions.py`, which rejects any returned file that
-  breaks them. If his prompts changed a scale, update `QUESTIONS` to match
-  his prompt text before analysing, and record the prompt files he used.
+- Scored on 2026-11-24/25 with the scales unchanged. The allowed values are
+  in `QUESTIONS` in `code/explore_llm_questions.py`, and every returned file
+  passed them.
 - Analysis plan: `specs_tried.md` Amendment 6.
