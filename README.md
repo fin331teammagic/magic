@@ -348,6 +348,16 @@ python code/explore_llm_questions.py \
   --out-dir outputs/exploratory_llm_questions/v2.0_gemma4   # run 20, exploratory
 python code/summarize_llm_screen.py outputs/exploratory_llm_questions/v2.0_gemma4
                                                # SUMMARY.md + call_check_sample.csv
+R=outputs/llm_scores_real
+python code/explore_llm_questions.py \
+  --scores gemma4=$R/q2_2026_llm_scores_v3.0_gemma4_after_cutoff395.csv \
+  --scores gptoss20b=$R/q2_2026_llm_scores_v3.0_gptoss20b_after_cutoff395.csv \
+  --scores qwen35_27b=$R/q2_2026_llm_scores_v3.0_qwen35_27b_after_cutoff395.csv \
+  --reference-llm $R/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv \
+  --out-dir outputs/exploratory_llm_questions/v3.0_three_models     # run 22
+python code/summarize_llm_screen.py outputs/exploratory_llm_questions/v3.0_three_models
+python code/explore_llm_questions.py --baseline run3 <same --scores and --reference-llm> \
+  --out-dir outputs/exploratory_llm_questions/v3.0_run3_baseline     # run 23
 python -m unittest discover -s tests
 ```
 
