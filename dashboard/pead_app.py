@@ -20,6 +20,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import charts  # noqa: E402
+import exploratory  # noqa: E402
 from data_registry import (  # noqa: E402
     DATASETS,
     PILOT,
@@ -241,11 +242,11 @@ SAMPLE_LABELS = {
 }
 
 tabs = st.tabs(
-    ["Overview", "Results (checkpoint)", "Data coverage", "Data quality & gaps", "Event explorer",
-     "Language findings", "Methods & limitations"]
+    ["Overview", "Results (checkpoint)", "New questions (exploratory)", "Data coverage",
+     "Data quality & gaps", "Event explorer", "Language findings", "Methods & limitations"]
 )
-results_tab = tabs[1]
-tabs = [tabs[0]] + list(tabs[2:])  # the original sections keep their indices below
+results_tab, explore_tab = tabs[1], tabs[2]
+tabs = [tabs[0]] + list(tabs[3:])  # the original sections keep their indices below
 
 # --------------------------------------------------------------------------
 # 1. Overview
@@ -497,6 +498,133 @@ with results_tab:
             st.dataframe(model_frame, hide_index=True)
             st.download_button("Download (CSV)", model_frame.to_csv(index=False).encode(),
                                "runs_1_3_primary_sample.csv", mime="text/csv")
+
+# --------------------------------------------------------------------------
+# Exploratory: new LLM questions (specs_tried.md Amendment 6)
+# --------------------------------------------------------------------------
+with explore_tab:
+    st.subheader("Which new AI-scored questions might carry signal?")
+    st.warning(
+        "**Exploratory, not pre-specified** (`specs_tried.md` Amendment 6). These questions were chosen "
+        "after the Runs 1–3 results, and the holdout had already been looked at. Treat anything here as a "
+        "lead to test on new data, not a finding. The pre-specified answer is on the *Results* tab.",
+        icon="🔍")
+    ex_screens = exploratory.list_screens()
+    if not ex_screens:
+        awaiting("Exploratory screen", "No screen has been run yet.",
+                 ["One-question-at-a-time effects", "Model agreement", "Overlap with existing variables"],
+                 [exploratory.ROOT])
+    else:
+        ex_screen = ex_screens[-1]
+        if len(ex_screens) > 1:
+            ex_screen = st.segmented_control("Screen", ex_screens, default=ex_screens[-1], required=True,
+                                          key="explore_screen")
+        ex_frames = exploratory.load_screen(ex_screen)
+        ex_single, ex_block = ex_frames["one_at_a_time"], ex_frames["block"]
+        if ex_single is None or ex_single.empty:
+            st.error("`{}/one_at_a_time.csv` could not be read.".format(ex_screen))
+        else:
+            ex_leads = exploratory.proposed_leads(ex_single)
+            ex_real_models = [m for m in dict.fromkeys(ex_leads["model"]) if m != exploratory.CONSENSUS]
+            ex_k = st.columns(4)
+            ex_k[0].metric("Models", len(ex_real_models), border=True,
+                        help="Plus a 'consensus' row (mean of the models' scores) when there are two or more.")
+            ex_k[1].metric("Questions", ex_leads["variable"].nunique(), border=True)
+            ex_flow = ex_frames["sample_flow"]
+            ex_base_n = int(ex_flow["n"].iloc[-1]) if ex_flow is not None and len(ex_flow) else int(ex_single["n"].max())
+            ex_k[2].metric("Events (base sample)", "{:,}".format(ex_base_n), border=True,
+                        help="Runs 1–2 complete, call after the cutoff, day 0 consistent. Each question "
+                             "drops its own nulls, so its n can be lower.")
+            ex_k[3].metric("Leads", int(ex_leads["proposed_lead"].sum()), border=True,
+                        help="Rows meeting all three checks below (rule fixed in Amendment 6 before the "
+                             "v3.0 scores arrived).")
+            if len(ex_real_models) < exploratory.LEAD_MIN_MODELS:
+                st.info("Only one model in this screen, so the 'passes in at least two models' check cannot "
+                        "pass and no row is a proposed lead. That is expected for the v2.0 pipeline check.",
+                        icon="ℹ️")
+
+            st.markdown("#### Effect of each question, added alone to Runs 1–2 (in-sample)")
+            st.altair_chart(charts.question_screen_chart(ex_leads), width="stretch")
+            st.caption("Dot = change in CAR[0,1] (percentage points) when the question's score rises by one "
+                       "standard deviation, holding fundamentals and dictionary measures fixed. Line = 95% "
+                       "interval, standard errors clustered by day 0. Calls with a null answer are dropped.")
+
+            st.markdown("#### Lead checks (Amendment 6)")
+            st.caption("Rule, fixed before the v3.0 scores arrived: a question passes for a model if its "
+                       "Benjamini–Hochberg q is below {q:.2f} and it improves the holdout (MSE gain above 0) "
+                       "with a placebo share below {pl:.2f}. It is a lead only if it passes, with the same "
+                       "sign, in at least {m} models. With 20 questions × 3 models, about 3 p-values below "
+                       "0.05 are expected by chance.".format(
+                           q=exploratory.LEAD_Q_MAX, pl=exploratory.LEAD_PLACEBO_MAX,
+                           m=exploratory.LEAD_MIN_MODELS))
+            st.dataframe(
+                ex_leads[["model", "variable", "n", "coef", "p_value", "bh_q_within_model", "delta_r2",
+                       "delta_mse", "placebo_share", "survives_multiple_testing", "helps_holdout",
+                       "models_passing_same_sign", "proposed_lead"]],
+                hide_index=True, column_config={
+                    "model": "Model", "variable": "Question", "n": st.column_config.NumberColumn("Events"),
+                    "coef": st.column_config.NumberColumn("pp per step", format="%.2f"),
+                    "p_value": st.column_config.NumberColumn("p", format="%.4f"),
+                    "bh_q_within_model": st.column_config.NumberColumn("BH q", format="%.3f"),
+                    "delta_r2": st.column_config.NumberColumn("ΔR² in-sample", format="%.3f"),
+                    "delta_mse": st.column_config.NumberColumn(
+                        "Holdout MSE gain", format="%.2f", help="Positive = predicts better than Runs 1–2."),
+                    "placebo_share": st.column_config.NumberColumn(
+                        "Placebo share", format="%.3f", help="Share of shuffled-score draws that did at least "
+                                                             "as well. Small = real signal."),
+                    "models_passing_same_sign": st.column_config.NumberColumn(
+                        "Models passing, same sign", help="Real models (not consensus) where this question "
+                                                          "passes both checks with the same sign."),
+                    "survives_multiple_testing": "BH q ok",
+                    "helps_holdout": "Holdout ok", "proposed_lead": "Lead",
+                })
+            if ex_block is not None and not ex_block.empty:
+                st.markdown("#### All questions together")
+                st.dataframe(ex_block[[c for c in ("model", "n_questions", "n", "delta_r2", "block_wald_p",
+                                                   "block_f_p_unclustered", "delta_mse", "placebo_share")
+                                       if c in ex_block]], hide_index=True, column_config={
+                    "model": "Model", "n_questions": "Questions", "n": "Events",
+                    "delta_r2": st.column_config.NumberColumn("ΔR² in-sample", format="%.3f"),
+                    "block_wald_p": st.column_config.NumberColumn(
+                        "Block Wald p (clustered)", format="%.4f",
+                        help="Blank when the block has more columns than day-0 clusters allow; the "
+                             "clustered test is undefined then."),
+                    "block_f_p_unclustered": st.column_config.NumberColumn(
+                        "Block F p (not clustered)", format="%.4f",
+                        help="Ignores that calls on the same day share news, so it is too optimistic."),
+                    "delta_mse": st.column_config.NumberColumn("Holdout MSE gain", format="%.2f"),
+                    "placebo_share": st.column_config.NumberColumn("Placebo share", format="%.3f")})
+                st.caption("Nulls are coded 0 with a 'not discussed' indicator here, so the sample does not "
+                           "collapse. With many questions on about 300 events, the in-sample fit overfits; "
+                           "the holdout columns are the honest check.")
+
+            with st.expander("Does each question vary? (score distribution)"):
+                ex_dist = ex_frames["distribution"]
+                if ex_dist is not None:
+                    st.dataframe(ex_dist[["model", "variable", "n_scored", "n_null", "n_no_valid_row", "count_-1",
+                                       "count_0", "count_1", "count_2", "modal_share", "low_variation"]],
+                                 hide_index=True, column_config={
+                                     "modal_share": st.column_config.NumberColumn("Modal share", format="%.2f"),
+                                     "low_variation": "Over 90% one answer"})
+            with st.expander("Do the models agree?"):
+                ex_agree = ex_frames["agreement"]
+                if ex_agree is None or ex_agree.empty:
+                    st.caption("Needs two or more models.")
+                else:
+                    st.dataframe(ex_agree, hide_index=True, column_config={
+                        c: st.column_config.NumberColumn(format="%.2f")
+                        for c in ("exact_agreement", "weighted_kappa", "spearman")})
+            with st.expander("Do they re-measure what we already had? (the 'ruler' check)"):
+                ex_over = ex_frames["overlap"]
+                if ex_over is not None:
+                    st.dataframe(ex_over[["model", "variable", "max_abs_rho_reference", "closest_reference",
+                                       "max_abs_rho_other_new", "closest_other_new"]], hide_index=True,
+                                 column_config={c: st.column_config.NumberColumn(format="%.2f")
+                                                for c in ("max_abs_rho_reference", "max_abs_rho_other_new")})
+                    st.caption("Largest absolute Spearman correlation with EPS surprise, the dictionary "
+                               "measures (and the v2.0 questions, when given), and with the other new questions.")
+            st.caption("Source: `outputs/exploratory_llm_questions/{}/`, written by "
+                       "`code/explore_llm_questions.py`.".format(ex_screen))
 
 # --------------------------------------------------------------------------
 # 2. Data coverage

@@ -343,6 +343,9 @@ python code/run_nested_models.py --llm-scores <as above> --llm-scores-all <as ab
   --outcome-override outputs/q2_2026_car_255.csv car_0_1_pct_255 --out-dir outputs/robustness_car255
 python code/exploratory_sentiment_gap.py \
   --llm-scores outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv
+python code/explore_llm_questions.py \
+  --scores gemma4=outputs/llm_scores_real/q2_2026_llm_scores_v2.0_gemma4_after_cutoff395.csv \
+  --out-dir outputs/exploratory_llm_questions/v2.0_gemma4   # run 20, exploratory
 python -m unittest discover -s tests
 ```
 

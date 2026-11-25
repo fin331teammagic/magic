@@ -16,8 +16,11 @@
   predictions worse, so the language variables are **not supported**.
   - The 255-session estimation window gives the same answer.
   - Dashboard: https://team-magic-pead.streamlit.app
-- **Open:** an optional second scoring run of 30 calls, for reliability
-  (`inputs/llm_reliability_sample_ids.csv`).
+- **Exploratory, in progress (Amendment 6):** Prof. Bowen is scoring 20
+  more questions (`docs/LLM_QUESTIONS_V3_DRAFT.md`) with up to three local
+  models. `code/explore_llm_questions.py` is ready for the files. Run 20 is
+  a pipeline check on the v2.0 scores. The 30-call reliability rerun is
+  dropped.
 
 Everything below is the project history before 2026-11-19, kept for the
 record. Where it differs from the summary above, the summary and

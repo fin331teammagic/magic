@@ -254,6 +254,7 @@ failed and discarded runs.
 | 17 | 2026-11-23 | Abby | cohort, Yahoo prices as of 2026-11-13, French FF5 (CRSP 202609) | — | Amendment 4 check: easy_es's window rebuilt by `code/car_255_robustness.py --mode easy_es`; reproduces committed `car_0_1_pct` for 492 events (max difference < 0.0001 pp) | 492 | No | — |
 | 18 | 2026-11-23 | Abby | same | — | Amendment 4 outcome: CAR[0,1] with a true 255-session estimation window (`--mode full`); median shift 0.27 pp, max 2.75, corr 0.997; HPE 16.89 → 17.91 as in the audit | 492 | No | `outputs/q2_2026_car_255.csv` |
 | 19 | 2026-11-23 | Abby | as runs 12–15, outcome replaced by run 18 | CAR[0,1], 255-session window | Nested Runs 1–3, all four samples, `run_nested_models.py --outcome-override` | 304 / 307 / 335 / 360 | **Yes, once** | `outputs/robustness_car255/` |
+| 20 | 2026-11-24 | Abby | base sample of Amendment 3 (336 primary events) + Gemma 4 v2.0 scores | CAR[0,1] | **Exploratory, not pre-specified (Amendment 6):** each v2.0 question added alone to Run 1 + Run 2; all five as one block, nulls coded 0 plus an indicator. `code/explore_llm_questions.py`. Pipeline check before the v3.0 scores arrive | 304–335 | Yes (already seen in runs 12–19) | `outputs/exploratory_llm_questions/v2.0_gemma4/` |
 
 **Runs 3 and 6–8: rubric checks on invented calls.** Each cell is the number
 of labels agreeing with the reference, summed over the five variables plus
@@ -339,6 +340,27 @@ primary sample has 304 events. Training covers day 0 through 2026-07-30
 - **Run 16, exploratory:** the sentiment gap has a Spearman correlation of
   −0.04 with CAR[0,1]. With Run 1 controls it is −0.25 pp per SD
   [−1.11, 0.61], p = 0.57. There is no sign of an effect.
+
+**Run 20, exploratory (Amendment 6).** Same 336-event base sample, with the
+training set through 2026-07-30 and a 121-event holdout. Each v2.0 question
+was added alone to Run 1 + Run 2:
+
+| Question | n | Coef. (pp per step) | p | BH q | Holdout ΔMSE | Placebo share |
+|---|---|---|---|---|---|---|
+| `guidance_revision` | 304 | +1.75 | 0.006 | 0.031 | +1.66 | 0.004 |
+| `one_off_attribution` | 335 | −1.02 | 0.026 | 0.064 | +0.11 | 0.23 |
+| `analyst_concern_focus` | 335 | −1.22 | 0.053 | 0.089 | −1.65 | 0.95 |
+| `qa_evasiveness` | 335 | −0.32 | 0.54 | 0.68 | −0.05 | 0.51 |
+| `guidance_specificity` | 335 | +0.29 | 0.91 | 0.91 | −2.03 | 0.93 |
+
+- **Check:** the all-five block (null coded 0 plus an indicator, 335
+  events) gives ΔMSE −2.80 and placebo 0.81, the same as run 14
+  (`primary_null_category`). That run used separate code.
+- **Reading:** `guidance_revision` alone improves the holdout, and almost no
+  shuffled draw does as well. In Run 3 it was diluted by four weaker
+  variables. This is not an independent discovery. Runs 12–19 had already
+  shown it as the strongest variable on the same holdout, so it is a lead
+  to test on new data, not a result.
 
 ### Amendments
 
@@ -513,3 +535,66 @@ for the Run 2–3 sample.
 - **Code:** `code/run_nested_models.py` gains the two robustness variants
   above. The `primary` and `all_events` rows are unchanged from the tested
   pre-specified version.
+
+**Amendment 6 · 2026-11-24 · Abby · exploratory screen of the v3.0 questions.**
+Written before any v3.0 score has been received. It does not change §1–7 or
+the pre-specified answer (runs 12–19: not supported).
+
+- **Why:** Prof. Bowen offered (email, 2026-11-24) to score up to 20 more
+  questions with up to three local models. He advised against reading only
+  pre-registered tests. The questions are `docs/LLM_QUESTIONS_V3_DRAFT.md`.
+  He will not rerun v2.0, so the 30-call reliability rerun is dropped.
+- **Status:** everything below is **exploratory**. It was designed after
+  seeing runs 12–19, and the holdout has already been looked at.
+- **Analysis** (`code/explore_llm_questions.py`), for each model and for the
+  cross-model mean (`consensus`):
+  1. **Variation:** value counts and modal share. A modal share above 90%
+     is flagged.
+  2. **Cross-model agreement:** exact agreement, quadratic-weighted kappa
+     and Spearman.
+  3. **Overlap:** Spearman with EPS surprise, Run 2 and the v2.0 variables,
+     with no outcome read.
+  4. **One question at a time:** each question is added to Run 1 + Run 2.
+     - Day-0-clustered p, ΔR², holdout ΔMSE against the baseline refit on
+       the same events, and a shuffled-score placebo (500 draws, seed 331).
+     - Benjamini–Hochberg q within each model.
+     - Nulls are dropped. For nullable questions they are also coded 0 plus
+       an indicator.
+  5. **All questions as one block:** nulls coded 0 plus an indicator. With
+     about 20 questions on about 300 events, the in-sample fit is expected
+     to overfit.
+     - The primary sample has only 21 day-0 clusters. A clustered Wald test
+       cannot test as many restrictions as there are clusters minus one.
+     - When the block has that many columns, the clustered p is left blank.
+       An unclustered F-test p is reported instead, labeled as too
+       optimistic.
+     - Found on 2026-11-24 in a rehearsal on invented scores, before any
+       v3.0 score was received. The 20-question block gave clustered p of
+       0.0000 or 1.0000 on random data.
+- **Sample:** the base sample of Amendment 3 (336 primary events). The
+  holdout split date (day 0 through 2026-07-30) is fixed once on that sample.
+- **Validation:** each returned value is checked against the v3.0 rubric. A
+  file with a value outside the rubric, or a null where the rubric has none,
+  is rejected and not analysed.
+- **Reporting:**
+  - The results are listed apart from the pre-specified answer.
+  - Each one is described as a lead, with its BH q-value and placebo share.
+  - With 20 questions × 3 models, about 3 p-values below 0.05 are expected
+    by chance alone.
+  - A question counts as a lead only if it is consistent across models and
+    holds up on the holdout. One significant in-sample coefficient is not
+    enough.
+- **Lead rule** (Abby and Michelle, 2026-11-24, fixed before any v3.0 score
+  was received; tightened the same evening, still before any score).
+  1. **Passes for a model:** a question passes for a model if both hold:
+     - its Benjamini–Hochberg q within that model is below 0.10;
+     - its holdout ΔMSE is above 0, with a placebo share below 0.05.
+  2. **Lead:** it passes, with the same coefficient sign, in at least 2 of
+     the 3 models. The consensus row is not counted.
+
+  - **Why it was tightened:** the first version required only the same sign
+    in 2 of 3 models. With three models, two always share a sign. In a
+    rehearsal on random invented scores, that version passed a chance
+    result.
+  - **Code:** `dashboard/exploratory.py` applies the rule.
+  - **Run 20:** with only one model, no question can be a lead.

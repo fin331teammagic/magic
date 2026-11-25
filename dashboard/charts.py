@@ -375,3 +375,29 @@ def run_predictions_chart(preds: pd.DataFrame, run_col: str, run_label: str) -> 
                  alt.Tooltip("{}:Q".format(run_col), title="Predicted", format=".2f"),
                  alt.Tooltip("actual:Q", title="Actual", format=".2f")])
     return (diag + dots).properties(height=360)
+
+
+def question_screen_chart(rows: pd.DataFrame) -> alt.Chart:
+    """Effect per +1 SD of each question added alone, one dot and interval per model."""
+    df = rows.dropna(subset=["coef_per_sd"]).copy()
+    order = list(df.groupby("variable")["coef_per_sd"].mean().sort_values().index)
+    models = list(dict.fromkeys(df["model"]))
+    palette = [BLUE, ORANGE, AQUA, MUTED]
+    base = alt.Chart(df).encode(
+        y=alt.Y("variable:N", sort=order, title=None, axis=alt.Axis(labelLimit=260)),
+        yOffset=alt.YOffset("model:N", sort=models),
+        color=alt.Color("model:N", sort=models, scale=alt.Scale(domain=models, range=palette[:len(models)]),
+                        legend=alt.Legend(title="Model", orient="bottom")),
+        tooltip=[alt.Tooltip("variable:N", title="Question"), alt.Tooltip("model:N", title="Model"),
+                 alt.Tooltip("coef_per_sd:Q", title="Effect of +1 SD (pp)", format=".2f"),
+                 alt.Tooltip("ci_low_per_sd:Q", title="95% low", format=".2f"),
+                 alt.Tooltip("ci_high_per_sd:Q", title="95% high", format=".2f"),
+                 alt.Tooltip("bh_q_within_model:Q", title="BH q", format=".3f"),
+                 alt.Tooltip("n:Q", title="Events")],
+    )
+    bars = base.mark_rule(strokeWidth=2).encode(
+        x=alt.X("ci_low_per_sd:Q", title="Change in CAR[0,1] per +1 SD (pp), added alone to Runs 1-2"),
+        x2="ci_high_per_sd:Q")
+    dots = base.mark_circle(size=70, opacity=1).encode(x="coef_per_sd:Q")
+    step = 14 * max(len(models), 1) + 8
+    return (_zero_rule("x") + bars + dots).properties(height=alt.Step(step))
