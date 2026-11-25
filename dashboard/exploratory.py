@@ -46,38 +46,34 @@ def load_screen(name: str, root: Path = ROOT) -> dict[str, pd.DataFrame | None]:
 def proposed_leads(single: pd.DataFrame) -> pd.DataFrame:
     """One row per model and question (nulls dropped), with the Amendment 6 lead checks.
 
-    - ``same_direction``: at least ``LEAD_MIN_MODELS`` real models (this one
-      included; the consensus row is not counted) have the same sign as this
-      row's coefficient. With
-      fewer real models than that, it cannot be checked and is False.
     - ``survives_multiple_testing``: BH q within the model below ``LEAD_Q_MAX``.
     - ``helps_holdout``: holdout MSE gain above 0 and placebo share below
       ``LEAD_PLACEBO_MAX``.
-    - ``proposed_lead``: all three.
+    - ``passes_alone``: both of the above, for this model.
+    - ``models_passing_same_sign``: real models (the consensus row is not
+      counted) that pass alone with the same coefficient sign as this row.
+    - ``replicates``: at least ``LEAD_MIN_MODELS`` such models. With fewer
+      real models than that, it cannot pass.
+    - ``proposed_lead``: passes alone and replicates.
+
+    Requiring the *checks* to replicate, not just the sign, matters: with
+    three models at least two always share a sign, so a sign-only rule
+    passed a chance result in a rehearsal on random scores.
     """
     rows = single[single["null_handling"] == "dropped"].copy()
     for column in ("coef", "bh_q_within_model", "delta_mse", "placebo_share"):
         if column not in rows:
             rows[column] = float("nan")
-    real = rows[rows["model"] != CONSENSUS]
-    n_models = real["model"].nunique()
-    def sign(c):
-        return (c > 0) - (c < 0) if pd.notna(c) else 0
-
-    real_signs = real.assign(sign=real["coef"].apply(sign))[["variable", "model", "sign"]]
-
-    def same_as_row(row):
-        """Real models whose sign matches this row's own sign (this model included)."""
-        own = sign(row["coef"])
-        if own == 0:
-            return 0
-        others = real_signs[(real_signs["variable"] == row["variable"])]
-        return int((others["sign"] == own).sum())
-
-    rows["models_same_direction"] = rows.apply(same_as_row, axis=1) if len(rows) else 0
-    rows["n_models"] = n_models
-    rows["same_direction"] = (n_models >= LEAD_MIN_MODELS) & (rows["models_same_direction"] >= LEAD_MIN_MODELS)
     rows["survives_multiple_testing"] = rows["bh_q_within_model"] < LEAD_Q_MAX
     rows["helps_holdout"] = (rows["delta_mse"] > 0) & (rows["placebo_share"] < LEAD_PLACEBO_MAX)
-    rows["proposed_lead"] = rows["same_direction"] & rows["survives_multiple_testing"] & rows["helps_holdout"]
-    return rows.sort_values(["proposed_lead", "bh_q_within_model"], ascending=[False, True])
+    rows["passes_alone"] = rows["survives_multiple_testing"] & rows["helps_holdout"]
+    rows["sign"] = rows["coef"].apply(lambda c: (c > 0) - (c < 0) if pd.notna(c) else 0)
+    passing = rows[(rows["model"] != CONSENSUS) & rows["passes_alone"] & (rows["sign"] != 0)]
+    counts = passing.groupby(["variable", "sign"]).size()
+    rows["models_passing_same_sign"] = [
+        int(counts.get((v, sg), 0)) for v, sg in zip(rows["variable"], rows["sign"])]
+    rows["n_models"] = rows.loc[rows["model"] != CONSENSUS, "model"].nunique()
+    rows["replicates"] = rows["models_passing_same_sign"] >= LEAD_MIN_MODELS
+    rows["proposed_lead"] = rows["passes_alone"] & rows["replicates"]
+    return rows.drop(columns="sign").sort_values(["proposed_lead", "bh_q_within_model"],
+                                                 ascending=[False, True])

@@ -539,7 +539,7 @@ with explore_tab:
                         help="Rows meeting all three checks below (rule fixed in Amendment 6 before the "
                              "v3.0 scores arrived).")
             if len(ex_real_models) < exploratory.LEAD_MIN_MODELS:
-                st.info("Only one model in this screen, so the 'same direction across models' check cannot "
+                st.info("Only one model in this screen, so the 'passes in at least two models' check cannot "
                         "pass and no row is a proposed lead. That is expected for the v2.0 pipeline check.",
                         icon="ℹ️")
 
@@ -550,15 +550,17 @@ with explore_tab:
                        "interval, standard errors clustered by day 0. Calls with a null answer are dropped.")
 
             st.markdown("#### Lead checks (Amendment 6)")
-            st.caption("Rule, fixed before the v3.0 scores arrived: a question is a lead only if it points the same way for at least {} "
-                       "models, has a Benjamini–Hochberg q below {:.2f} within its model, and improves the "
-                       "holdout (MSE gain above 0) with a placebo share below {:.2f}. With 20 questions × 3 "
-                       "models, about 3 p-values below 0.05 are expected by chance.".format(
-                           exploratory.LEAD_MIN_MODELS, exploratory.LEAD_Q_MAX, exploratory.LEAD_PLACEBO_MAX))
+            st.caption("Rule, fixed before the v3.0 scores arrived: a question passes for a model if its "
+                       "Benjamini–Hochberg q is below {q:.2f} and it improves the holdout (MSE gain above 0) "
+                       "with a placebo share below {pl:.2f}. It is a lead only if it passes, with the same "
+                       "sign, in at least {m} models. With 20 questions × 3 models, about 3 p-values below "
+                       "0.05 are expected by chance.".format(
+                           q=exploratory.LEAD_Q_MAX, pl=exploratory.LEAD_PLACEBO_MAX,
+                           m=exploratory.LEAD_MIN_MODELS))
             st.dataframe(
                 ex_leads[["model", "variable", "n", "coef", "p_value", "bh_q_within_model", "delta_r2",
-                       "delta_mse", "placebo_share", "models_same_direction", "same_direction",
-                       "survives_multiple_testing", "helps_holdout", "proposed_lead"]],
+                       "delta_mse", "placebo_share", "survives_multiple_testing", "helps_holdout",
+                       "models_passing_same_sign", "proposed_lead"]],
                 hide_index=True, column_config={
                     "model": "Model", "variable": "Question", "n": st.column_config.NumberColumn("Events"),
                     "coef": st.column_config.NumberColumn("pp per step", format="%.2f"),
@@ -570,8 +572,10 @@ with explore_tab:
                     "placebo_share": st.column_config.NumberColumn(
                         "Placebo share", format="%.3f", help="Share of shuffled-score draws that did at least "
                                                              "as well. Small = real signal."),
-                    "models_same_direction": st.column_config.NumberColumn("Models, same sign"),
-                    "same_direction": "Same direction", "survives_multiple_testing": "BH q ok",
+                    "models_passing_same_sign": st.column_config.NumberColumn(
+                        "Models passing, same sign", help="Real models (not consensus) where this question "
+                                                          "passes both checks with the same sign."),
+                    "survives_multiple_testing": "BH q ok",
                     "helps_holdout": "Holdout ok", "proposed_lead": "Lead",
                 })
             if ex_block is not None and not ex_block.empty:
