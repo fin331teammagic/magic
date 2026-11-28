@@ -221,7 +221,7 @@ baseline is Run 1 + Run 2, and nulls are dropped.
 | `expected_investor_reaction` | gpt-oss | 335 | +1.71 | 0.080 | 0.399 | +0.08 | 0.294 | no | 2 | — |
 | `analyst_pushback` | Gemma 4 | 336 | −1.85 | 0.010 | 0.089 | +1.29 | 0.012 | yes | 2 | **yes** |
 | `analyst_pushback` | Qwen3.5 | 336 | −1.73 | 0.003 | 0.023 | +1.38 | 0.010 | yes | 2 | **yes** |
-| `analyst_pushback` | gpt-oss | 335 | +0.36 | 0.565 | 0.897 | −0.05 | 0.540 | no | 2 | — |
+| `analyst_pushback` | gpt-oss | 335 | +0.36 | 0.565 | 0.897 | −0.05 | 0.540 | no | 0 | — |
 | `missed_own_target` | Qwen3.5 | 336 | −2.99 | 0.001 | 0.011 | +1.28 | 0.004 | yes | 1 | no |
 | `margin_outlook` | Qwen3.5 | 318 | +1.62 | 0.018 | 0.088 | +1.40 | 0.010 | yes | 1 | no |
 | `guidance_framing` | gpt-oss | 335 | −2.18 | 0.005 | 0.105 | +1.27 | 0.010 | no (q) | 0 | no |
